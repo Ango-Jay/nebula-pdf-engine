@@ -6,9 +6,10 @@ export default defineConfig({
   dts: true,
   clean: true,
   platform: 'node',
-  // This is the "Magic" — it tells the library how to handle JSX
+  // Use Preact's automatic JSX runtime
   jsxFactory: 'h',
   jsxFragment: 'Fragment',
   // We bundle preact so the user doesn't have to install it
-  external: ['sharp', 'resvg-js'], 
+  // Keep Sharp and Resvg external (native C++ addons)
+  external: ['sharp', '@resvg/resvg-js'],
 });
