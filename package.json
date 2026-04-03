@@ -1,0 +1,27 @@
+{
+  "name": "nebula-pdf-engine",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "tsdown": "^0.21.7",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "fontkit": "^2.0.4",
+    "pdf-lib": "^1.17.1",
+    "preact": "^10.29.1",
+    "satori": "^0.26.0",
+    "sharp": "^0.34.5"
+  }
+}
