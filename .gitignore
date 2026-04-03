@@ -1,0 +1,41 @@
+# Build outputs
+# ---------------------------------------------------------------------------
+dist/
+build/
+*.tsbuildinfo
+
+# Dependencies
+# ---------------------------------------------------------------------------
+node_modules/
+
+# OS/Editor specific
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs and debug
+# ---------------------------------------------------------------------------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Testing
+# ---------------------------------------------------------------------------
+/coverage
+/.nyc_output
+test-output.pdf
+
+# Environment variables
+# ---------------------------------------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
