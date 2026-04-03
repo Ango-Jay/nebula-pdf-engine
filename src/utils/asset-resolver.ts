@@ -5,9 +5,10 @@ import sharp from 'sharp';
 export class AssetResolver {
   private cache = new Map<string, string>();
 
-  async resolveImage(src: string): Promise<string> {
-    // 1. Check Cache
-    if (this.cache.has(src)) return this.cache.get(src)!;
+  async resolveImage(src: string, width?: number, height?: number): Promise<string> {
+    // 1. Check Cache (Include dimensions in cache key if provided)
+    const cacheKey = `${src}${width ? `_w${width}` : ''}${height ? `_h${height}` : ''}`;
+    if (this.cache.has(cacheKey)) return this.cache.get(cacheKey)!;
 
     let buffer: Buffer;
 
@@ -22,15 +23,24 @@ export class AssetResolver {
       buffer = await fs.readFile(absolutePath);
     }
 
-    // 3. Normalize with Sharp (Senior move: optimize PDF size)
-    const processedBuffer = await sharp(buffer)
+    // 3. Normalize & Resize with Sharp (Senior move: optimize PDF size)
+    let sharpInstance = sharp(buffer);
+    
+    if (width || height) {
+      sharpInstance = sharpInstance.resize(width, height, {
+        fit: 'contain',
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      });
+    }
+
+    const processedBuffer = await sharpInstance
       .png() // Satori loves PNGs
       .toBuffer();
 
     const base64 = `data:image/png;base64,${processedBuffer.toString('base64')}`;
     
     // 4. Cache and Return
-    this.cache.set(src, base64);
+    this.cache.set(cacheKey, base64);
     return base64;
   }
 }

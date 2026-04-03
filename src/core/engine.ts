@@ -241,8 +241,12 @@ export class PdfEngine {
       const src = props?.src;
 
       if (src && typeof src === 'string' && !src.startsWith('data:')) {
-        // Resolve the image source to a base64 data URI
-        const resolvedSrc = await this.assetResolver.resolveImage(src);
+        // Resolve the image source to a base64 data URI (pass dimensions for optimization)
+        const resolvedSrc = await this.assetResolver.resolveImage(
+          src, 
+          props.width, 
+          props.height
+        );
         props.src = resolvedSrc;
       }
     }
