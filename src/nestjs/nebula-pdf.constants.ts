@@ -1,0 +1,1 @@
+export const NEBULA_PDF_OPTIONS = 'NEBULA_PDF_OPTIONS';
