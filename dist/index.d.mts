@@ -162,6 +162,75 @@ interface ImageProps {
   alt?: string;
 }
 //#endregion
+//#region src/core/engine.d.ts
+interface GenerateOptions {
+  /** PDF metadata: document title */
+  title?: string;
+  /** PDF metadata: document author */
+  author?: string;
+  /** PDF metadata: document subject */
+  subject?: string;
+}
+/**
+ * The main entry point for generating PDFs from JSX templates.
+ *
+ * Usage:
+ * ```ts
+ * import { PdfEngine, Page, Text } from 'nebula-pdf-engine';
+ *
+ * const engine = new PdfEngine({
+ *   fonts: [{ name: 'Inter', data: fontBuffer, weight: 400 }],
+ * });
+ *
+ * const pdfBytes = await engine.generate(
+ *   <Page size="A4">
+ *     <Text style={{ fontSize: 24 }}>Hello, World!</Text>
+ *   </Page>
+ * );
+ * ```
+ */
+declare class PdfEngine {
+  private fonts;
+  private assetResolver;
+  constructor(config: EngineConfig);
+  /**
+   * Generates a PDF from a JSX element tree.
+   *
+   * The element should be a `<Page>` component (or multiple pages
+   * wrapped in a fragment). Each `<Page>` becomes a separate page
+   * in the output PDF.
+   *
+   * @param element - The root JSX element (typically a `<Page>`)
+   * @param options - Optional PDF metadata (title, author, etc.)
+   * @returns The PDF file as a Buffer
+   */
+  generate(element: VNode, options?: GenerateOptions): Promise<Buffer>;
+  /**
+   * Extracts `<Page>` components from the element tree.
+   *
+   * Supports three patterns:
+   * 1. A single `<Page>` as the root element
+   * 2. Multiple `<Page>` components inside a fragment
+   * 3. Multiple `<Page>` components inside a wrapper `<div>`
+   */
+  private extractPages;
+  /**
+   * Checks whether a VNode represents a `<Page>` component.
+   */
+  private isPageElement;
+  /**
+   * Extracts page configuration props from a `<Page>` VNode.
+   */
+  private extractPageProps;
+  /**
+   * Walks the VNode tree and resolves all image sources to base64 data URIs.
+   *
+   * This mutates the tree in-place — replacing `src` props on `<Image>`
+   * components with their resolved base64 values.
+   */
+  private resolveImages;
+}
+//#endregion
 //#region src/components/primitives.d.ts
 /**
  * Defines a single PDF page. Acts as the top-level container
@@ -253,5 +322,5 @@ declare namespace Image {
   var displayName: string;
 }
 //#endregion
-export { Box, type BoxProps, type EngineConfig, type FontConfig, Image, type ImageOptions, type ImageProps, type Orientation, PAGE_SIZES, type Padding, Page, type PageProps, type PageSize, type SatoriStyle, Text, type TextProps };
+export { Box, type BoxProps, type EngineConfig, type FontConfig, type GenerateOptions, Image, type ImageOptions, type ImageProps, type Orientation, PAGE_SIZES, type Padding, Page, type PageProps, type PageSize, PdfEngine, type SatoriStyle, Text, type TextProps };
 //# sourceMappingURL=index.d.mts.map

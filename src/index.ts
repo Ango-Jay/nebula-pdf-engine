@@ -1,3 +1,7 @@
+// Export the main engine
+export { PdfEngine } from './core/engine';
+export type { GenerateOptions } from './core/engine';
+
 // Export the React Primitives
 export { Page, Box, Text, Image } from './components/primitives';
 
