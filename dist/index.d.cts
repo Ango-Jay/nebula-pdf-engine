@@ -206,6 +206,10 @@ declare class PdfEngine {
    */
   generate(element: VNode, options?: GenerateOptions): Promise<Buffer>;
   /**
+   * Extracts children from a VNode (handles arrays, single nodes, fragments).
+   */
+  private extractChildren;
+  /**
    * Extracts `<Page>` components from the element tree.
    *
    * Supports three patterns:

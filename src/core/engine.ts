@@ -4,6 +4,7 @@ import { resolvePageDimensions, PAGE_SIZES } from '../types';
 import { renderToImage } from './renderer';
 import { assemblePdf, type AssemblerOptions, type PageBuffer } from './assembler';
 import { AssetResolver } from '../utils/asset-resolver';
+import { LayoutEngine } from '../layout/layout-engine';
 
 // ─── Types ───
 
@@ -67,9 +68,9 @@ export class PdfEngine {
     options: GenerateOptions = {},
   ): Promise<Buffer> {
     // ─── 1. Extract page configurations from the JSX tree ───
-    const pageElements = this.extractPages(element);
+    const inputPageElements = this.extractPages(element);
 
-    if (pageElements.length === 0) {
+    if (inputPageElements.length === 0) {
       throw new Error(
         '[nebula-pdf-engine] No <Page> components found in the element tree. ' +
         'Wrap your content in a <Page> component.',
@@ -79,24 +80,62 @@ export class PdfEngine {
     // ─── 2. Resolve images in the JSX tree ───
     await this.resolveImages(element);
 
-    // ─── 3. Render each page to a PNG buffer ───
+    // ─── 3. Paginate and Render ───
     const pageBuffers: PageBuffer[] = [];
+    const layoutEngine = new LayoutEngine(this.fonts);
 
-    for (const pageElement of pageElements) {
-      const { size, orientation, padding } = this.extractPageProps(pageElement);
+    for (const inputPage of inputPageElements) {
+      const { size, orientation, padding } = this.extractPageProps(inputPage);
       const dimensions = resolvePageDimensions(size, orientation, padding);
 
-      const pngBuffer = await renderToImage(pageElement, {
-        width: dimensions.width,
-        height: dimensions.height,
-        fonts: this.fonts,
-      });
+      // Extract children from the input page
+      const inputChildren = this.extractChildren(inputPage);
 
-      pageBuffers.push({
-        pngBuffer,
-        width: dimensions.width,
-        height: dimensions.height,
-      });
+      // Run the layout engine to split children across pages
+      const synthesizedPages = await layoutEngine.paginate(
+        inputChildren,
+        dimensions,
+      );
+
+      // Render each synthesized page to a PNG buffer
+      for (const children of synthesizedPages) {
+        // Build a fresh Page VNode for Satori with the correct dimensions
+        const pageVNode: VNode = {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              width: '100%',
+              height: '100%',
+              backgroundColor: '#fff', // Default background
+            },
+            children,
+          },
+          key: null,
+          __k: null,
+          __: null,
+          __b: 0,
+          __e: null,
+          __c: null,
+          __v: 0,
+          __i: 0,
+          constructor: undefined,
+          ref: null,
+        } as any;
+
+        const pngBuffer = await renderToImage(pageVNode, {
+          width: dimensions.width,
+          height: dimensions.height,
+          fonts: this.fonts,
+        });
+
+        pageBuffers.push({
+          pngBuffer,
+          width: dimensions.width,
+          height: dimensions.height,
+        });
+      }
     }
 
     // ─── 4. Assemble PNGs into a PDF ───
@@ -109,6 +148,16 @@ export class PdfEngine {
     const pdfBytes = await assemblePdf(pageBuffers, assemblerOptions);
 
     return Buffer.from(pdfBytes);
+  }
+
+  /**
+   * Extracts children from a VNode (handles arrays, single nodes, fragments).
+   */
+  private extractChildren(element: VNode): VNode[] {
+    const children = (element.props as any)?.children;
+    if (!children) return [];
+    if (Array.isArray(children)) return children.filter(c => !!c);
+    return [children];
   }
 
   /**
