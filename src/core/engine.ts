@@ -40,6 +40,7 @@ export interface GenerateOptions {
 export class PdfEngine {
   private fonts: FontConfig[];
   private assetResolver: AssetResolver;
+  private devicePixelRatio: number;
 
   constructor(config: EngineConfig) {
     if (!config.fonts || config.fonts.length === 0) {
@@ -50,6 +51,7 @@ export class PdfEngine {
 
     this.fonts = config.fonts;
     this.assetResolver = new AssetResolver();
+    this.devicePixelRatio = config.devicePixelRatio ?? 2;
   }
 
   /**
@@ -124,11 +126,15 @@ export class PdfEngine {
           ref: null,
         } as any;
 
-        const pngBuffer = await renderToImage(pageVNode, {
-          width: dimensions.width,
-          height: dimensions.height,
-          fonts: this.fonts,
-        });
+        const pngBuffer = await renderToImage(
+          pageVNode, 
+          {
+            width: dimensions.width,
+            height: dimensions.height,
+            fonts: this.fonts,
+          },
+          this.devicePixelRatio
+        );
 
         pageBuffers.push({
           pngBuffer,

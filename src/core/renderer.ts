@@ -57,20 +57,17 @@ export async function renderToSvg(
 /**
  * Converts an SVG string into a PNG buffer using Resvg (Rust-based).
  *
- * Resvg is significantly faster than alternatives like puppeteer or
- * canvas-based renderers because it's compiled to native code via NAPI.
- *
  * @param svgString - Complete SVG markup
+ * @param scale - Pixel density / scaling factor (devicePixelRatio). Default: 1
  * @returns PNG image as a Buffer
  */
-export function renderToPng(svgString: string): Buffer {
+export function renderToPng(svgString: string, scale: number = 1): Buffer {
   const resvg = new Resvg(svgString, {
     font: {
-      // Don't load system fonts — we embed everything via Satori
       loadSystemFonts: false,
     },
-    // Use the SVG's intrinsic size (matches page dimensions)
-    fitTo: { mode: 'original' },
+    // Use zoom mode to apply the devicePixelRatio
+    fitTo: { mode: 'zoom', value: scale },
   });
 
   const rendered = resvg.render();
@@ -81,16 +78,17 @@ export function renderToPng(svgString: string): Buffer {
 
 /**
  * Renders a Preact VNode directly to a PNG buffer.
- * Combines `renderToSvg` and `renderToPng` in a single call.
  *
  * @param element - The JSX element tree
  * @param options - Page dimensions and font configuration
+ * @param scale - Pixel density / scaling factor
  * @returns PNG image as a Buffer
  */
 export async function renderToImage(
   element: VNode,
   options: RenderToSvgOptions,
+  scale: number = 1,
 ): Promise<Buffer> {
   const svg = await renderToSvg(element, options);
-  return renderToPng(svg);
+  return renderToPng(svg, scale);
 }

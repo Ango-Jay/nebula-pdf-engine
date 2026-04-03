@@ -88,6 +88,12 @@ export interface EngineConfig {
   fonts: FontConfig[];
   /** Asset caching strategy. Default: 'memory' */
   assetCache?: 'memory' | 'none';
+  /** 
+   * The pixel ratio used for rendering SVGs to PNGs. 
+   * Higher values result in crisper PDFs but larger file sizes.
+   * Default: 2 (Retina quality)
+   */
+  devicePixelRatio?: number;
   /** Options passed to Sharp for image processing */
   imageOptions?: ImageOptions;
 }
