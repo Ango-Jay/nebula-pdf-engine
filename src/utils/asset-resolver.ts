@@ -23,7 +23,7 @@ export class AssetResolver {
       buffer = await fs.readFile(absolutePath);
     }
 
-    // 3. Normalize & Resize with Sharp (Senior move: optimize PDF size)
+    // 3. Normalize & Resize with Sharp (optimize PDF size)
     let sharpInstance = sharp(buffer);
     
     if (width || height) {
