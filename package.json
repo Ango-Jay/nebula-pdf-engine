@@ -39,7 +39,6 @@
     "@nestjs/common": "^11.0.11",
     "@nestjs/core": "^11.0.11",
     "@types/node": "^25.5.2",
-    "@types/react": "^19.2.14",
     "reflect-metadata": "^0.2.2",
     "tsdown": "^0.21.7",
     "typescript": "^6.0.2",

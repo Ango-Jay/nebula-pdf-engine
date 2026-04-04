@@ -100,3 +100,53 @@ export async function measureAllChildren(
   return measured;
 }
 
+/**
+ * Measures the height of a table row by measuring each cell 
+ * within its resolved column width and taking the maximum.
+ */
+export async function measureRow(
+  rowData: any,
+  columns: any[],
+  resolvedWidths: number[],
+  fonts: FontConfig[],
+  isHeader: boolean = false,
+): Promise<number> {
+  let maxHeight = 0;
+
+  for (let i = 0; i < columns.length; i++) {
+    const col = columns[i];
+    const width = resolvedWidths[i];
+    const content = isHeader ? col.header : rowData[col.key];
+
+    if (content === undefined || content === null) continue;
+
+    // Build a temporary cell VNode for measurement
+    const cellVNode = {
+      type: 'div',
+      props: {
+        style: {
+          display: 'flex',
+          width: '100%',
+          ...col.style,
+        },
+        children: String(content),
+      },
+      key: null,
+      __k: null,
+      __: null,
+      __b: 0,
+      __e: null,
+      __c: null,
+      __v: 0,
+      __i: 0,
+      constructor: undefined,
+      ref: null,
+    } as any as VNode;
+
+    const cellHeight = await measureNodeHeight(cellVNode, width, fonts);
+    maxHeight = Math.max(maxHeight, cellHeight);
+  }
+
+  return maxHeight;
+}
+

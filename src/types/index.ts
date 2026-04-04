@@ -1,4 +1,4 @@
-import type { VNode } from 'preact';
+import type { VNode } from "preact";
 
 // ─── Page Sizes (in PDF Points: 1pt = 1/72 inch) ───
 
@@ -9,7 +9,7 @@ export const PAGE_SIZES = {
 } as const;
 
 export type PageSize = keyof typeof PAGE_SIZES;
-export type Orientation = 'portrait' | 'landscape';
+export type Orientation = "portrait" | "landscape";
 
 // ─── Padding ───
 
@@ -32,7 +32,7 @@ export function normalizePadding(padding?: Padding): PaddingObject {
     return { top: 0, right: 0, bottom: 0, left: 0 };
   }
 
-  if (typeof padding === 'number') {
+  if (typeof padding === "number") {
     return { top: padding, right: padding, bottom: padding, left: padding };
   }
 
@@ -67,7 +67,7 @@ export interface FontConfig {
   /** Font weight. Default: 400 */
   weight?: 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
   /** Font style. Default: 'normal' */
-  style?: 'normal' | 'italic';
+  style?: "normal" | "italic";
 }
 
 // ─── Sharp / Image Options ───
@@ -87,9 +87,9 @@ export interface EngineConfig {
   /** One or more font buffers to register with Satori */
   fonts: FontConfig[];
   /** Asset caching strategy. Default: 'memory' */
-  assetCache?: 'memory' | 'none';
-  /** 
-   * The pixel ratio used for rendering SVGs to PNGs. 
+  assetCache?: "memory" | "none";
+  /**
+   * The pixel ratio used for rendering SVGs to PNGs.
    * Higher values result in crisper PDFs but larger file sizes.
    * Default: 2 (Retina quality)
    */
@@ -106,15 +106,21 @@ export interface EngineConfig {
  */
 export interface SatoriStyle {
   // Layout
-  display?: 'flex' | 'none';
-  flexDirection?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
-  flexWrap?: 'wrap' | 'nowrap';
+  display?: "flex" | "none";
+  flexDirection?: "row" | "column" | "row-reverse" | "column-reverse";
+  flexWrap?: "wrap" | "nowrap";
   flexGrow?: number;
   flexShrink?: number;
   flexBasis?: number | string;
-  alignItems?: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline';
-  alignSelf?: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline';
-  justifyContent?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly';
+  alignItems?: "flex-start" | "flex-end" | "center" | "stretch" | "baseline";
+  alignSelf?: "flex-start" | "flex-end" | "center" | "stretch" | "baseline";
+  justifyContent?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
   gap?: number;
   rowGap?: number;
   columnGap?: number;
@@ -140,7 +146,7 @@ export interface SatoriStyle {
   paddingLeft?: number | string;
 
   // Position
-  position?: 'relative' | 'absolute';
+  position?: "relative" | "absolute";
   top?: number | string;
   right?: number | string;
   bottom?: number | string;
@@ -162,36 +168,36 @@ export interface SatoriStyle {
   borderTopRightRadius?: number | string;
   borderBottomRightRadius?: number | string;
   borderBottomLeftRadius?: number | string;
-  borderStyle?: 'solid' | 'dashed';
+  borderStyle?: "solid" | "dashed";
 
   // Background
   backgroundColor?: string;
   backgroundImage?: string;
   backgroundSize?: string;
   backgroundPosition?: string;
-  backgroundRepeat?: 'repeat' | 'no-repeat' | 'repeat-x' | 'repeat-y';
+  backgroundRepeat?: "repeat" | "no-repeat" | "repeat-x" | "repeat-y";
 
   // Typography
   color?: string;
   fontSize?: number;
   fontFamily?: string;
   fontWeight?: 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
-  fontStyle?: 'normal' | 'italic';
-  textAlign?: 'left' | 'right' | 'center' | 'justify';
-  textDecoration?: 'none' | 'underline' | 'line-through';
-  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  fontStyle?: "normal" | "italic";
+  textAlign?: "left" | "right" | "center" | "justify";
+  textDecoration?: "none" | "underline" | "line-through";
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
   lineHeight?: number | string;
   letterSpacing?: number | string;
-  wordBreak?: 'normal' | 'break-all' | 'break-word' | 'keep-all';
-  textOverflow?: 'clip' | 'ellipsis';
-  whiteSpace?: 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line';
+  wordBreak?: "normal" | "break-all" | "break-word" | "keep-all";
+  textOverflow?: "clip" | "ellipsis";
+  whiteSpace?: "normal" | "nowrap" | "pre" | "pre-wrap" | "pre-line";
 
   // Visual
-  overflow?: 'visible' | 'hidden';
+  overflow?: "visible" | "hidden";
   opacity?: number;
   boxShadow?: string;
   transform?: string;
-  objectFit?: 'contain' | 'cover' | 'fill' | 'none';
+  objectFit?: "contain" | "cover" | "fill" | "none";
 }
 
 // ─── Primitive Component Props ───
@@ -221,6 +227,61 @@ export interface ImageProps {
   alt?: string;
 }
 
+// ─── Table Types ───
+
+export interface ColumnDefinition {
+  /** Display label for the header */
+  header: string;
+  /** Property key in the data object */
+  key: string;
+  /** Fixed width in PDF points or percentage (e.g. 100, "20%") */
+  width?: number | string;
+  /** Flexible width weight (e.g. 1) */
+  flex?: number;
+  /** Text alignment within the column */
+  align?: 'left' | 'right' | 'center';
+  /** Custom styles for this specific column's cells */
+  style?: SatoriStyle;
+}
+
+export interface TableProps {
+  /** Column definitions */
+  columns: ColumnDefinition[];
+  /** Data array */
+  data: any[];
+  /** Outer container styles */
+  style?: SatoriStyle;
+  /** Header row specific styles */
+  headerStyle?: SatoriStyle;
+  /** Data row specific styles */
+  rowStyle?: SatoriStyle;
+  /** Table behavior and decorative options */
+  options?: {
+    stripe?: boolean;
+    stripeColor?: string;
+    headerRepeat?: boolean;
+  };
+  /** Preact internal requirement */
+  children?: any;
+}
+
+/** Represents a single resolved row for measurement/layout */
+export interface ResolvedRow {
+  index: number;
+  data: any;
+  isHeader: boolean;
+  height: number;
+}
+
+/** Represents a portion of a table that fits on a single page */
+export interface TableSegment {
+  header: boolean;
+  rows: any[];
+}
+
+/** Specialized VNode representation for the layout engine */
+export interface TableNode extends VNode<TableProps> {}
+
 // ─── Internal Types ───
 
 /** Resolved page dimensions after applying orientation */
@@ -238,15 +299,15 @@ export interface ResolvedPageDimensions {
  * Resolves the final page dimensions based on size, orientation, and padding.
  */
 export function resolvePageDimensions(
-  size: PageSize = 'A4',
-  orientation: Orientation = 'portrait',
+  size: PageSize = "A4",
+  orientation: Orientation = "portrait",
   padding?: Padding,
 ): ResolvedPageDimensions {
   const base = PAGE_SIZES[size];
   const normalizedPadding = normalizePadding(padding);
 
-  const width = orientation === 'portrait' ? base.width : base.height;
-  const height = orientation === 'portrait' ? base.height : base.width;
+  const width = orientation === "portrait" ? base.width : base.height;
+  const height = orientation === "portrait" ? base.height : base.width;
 
   return {
     width,

@@ -11,6 +11,7 @@ Powered by **Satori**, **Resvg**, and **pdf-lib**, Nebula provides pixel-perfect
 - **⚛️ Standard JSX**: Use `<Page>`, `<Box>`, `<Text>`, and `<Image>` with Preact.
 - **📏 Flexbox Layout**: Full support for CSS Flexbox via Satori (Yoga).
 - **📄 Multi-Page Engine**: Automatic content overflow detection and smart text splitting across pages.
+- **📊 First-Class Tables**: Schema-driven tables with automatic column resolution and repeating headers.
 - **🖼️ Smart Assets**: Just-in-time image optimization and resizing via **Sharp**.
 - **🦅 High Performance**: Powered by a Rust-based rendering pipeline (Resvg).
 - **🛡️ NestJS Native**: First-class support for NestJS with a dynamic module wrapper.
@@ -25,6 +26,36 @@ npm install nebula-pdf-engine
 ```
 
 **Note**: This package requires `sharp` and `@resvg/resvg-js`, which are native dependencies.
+
+---
+
+## 📊 Tables (First-Class Primitive)
+
+Nebula treats tables as layout primitives. Instead of manually building rows with boxes, you provide a schema and data.
+
+```tsx
+import { Table } from 'nebula-pdf-engine';
+
+const columns = [
+  { header: 'ID', key: 'id', width: 50 },
+  { header: 'Description', key: 'desc', flex: 1 },
+  { header: 'Amount', key: 'amt', width: 100, align: 'right' }
+];
+
+<Table 
+  columns={columns} 
+  data={rows} 
+  options={{ 
+    stripe: true, 
+    headerRepeat: true 
+  }} 
+/>
+```
+
+### Highlights:
+- **Header Repetition**: If a table spans 10 pages, the header appears on all 10 automatically.
+- **Atomic Rows**: A single row will never be sliced in half across pages.
+- **Flexible Widths**: Mix absolute points (`100`), percentages (`"20%"`), and flex weights (`flex: 1`).
 
 ---
 
@@ -174,6 +205,12 @@ Renders text strings.
 - `src`: Absolute paths, URLs, or relative paths.
 - `width` / `height`: **Required**. The engine uses these to downsample the image for the PDF, significantly reducing file size.
 
+### `<Table>`
+- `columns`: Array of `ColumnDefinition` objects (header, key, width/flex).
+- `data`: Array of objects to render.
+- `options`: `{ stripe, headerRepeat, stripeColor }`.
+- `headerStyle` / `rowStyle`: Style overrides for table elements.
+
 ---
 
 ## 🧠 Advanced: Layout Engine
@@ -181,7 +218,8 @@ Renders text strings.
 Nebula doesn't just render a single canvas; it features a recursive **Layout Engine**:
 1. **Measurement Pass**: Every child is pre-rendered at the target width to calculate its exact content height.
 2. **Bin Packing**: Elements are distributed into pages according to your `contentHeight`.
-3. **Atomic vs Splittable**: Images and Boxes are "Atomic" (moved to next page if they overflow), while Text is "Splittable".
+3. **Table Pipeline**: Tables trigger a specialized row-by-row pagination loop with header injection.
+4. **Atomic vs Splittable**: Images, Boxes, and **Table Rows** are "Atomic", while Text is "Splittable".
 
 ---
 
