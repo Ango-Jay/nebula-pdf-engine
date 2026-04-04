@@ -12,7 +12,6 @@
   "type": "module",
   "files": [
     "dist",
-    "src",
     "READ_ME.md"
   ],
   "main": "./dist/index.cjs",

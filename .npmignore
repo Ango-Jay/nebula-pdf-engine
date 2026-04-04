@@ -1,0 +1,22 @@
+# Source and Tests
+src/
+tests/
+*.test.ts
+*.test.tsx
+
+# Configs
+.vscode/
+.git/
+tsdown.config.ts
+tsconfig.json
+
+# Documentation/Metadata
+CONTRIBUTION_GUIDE.md
+.gemini/
+.DS_Store
+
+# Temporary outputs
+test-output.pdf
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
