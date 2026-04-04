@@ -12,7 +12,10 @@ export class AssetResolver {
 
     let buffer: Buffer;
 
-    // 2. Fetch or Read
+    // 2. Already Resolved
+    if (src.startsWith('data:')) return src;
+
+    // 3. Fetch or Read
     if (src.startsWith('http')) {
       const response = await fetch(src);
       buffer = Buffer.from(await response.arrayBuffer());

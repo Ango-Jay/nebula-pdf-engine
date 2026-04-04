@@ -201,7 +201,7 @@ function extractTextContent(children: any): string {
  * Finds the nearest word boundary (space, newline) at or before the given index.
  * Falls back to the original index if no boundary is found.
  */
-function findWordBoundary(text: string, targetIndex: number): number {
+export function findWordBoundary(text: string, targetIndex: number): number {
   if (targetIndex >= text.length) return text.length;
 
   // Look backward for a space or newline
