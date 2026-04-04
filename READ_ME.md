@@ -58,7 +58,39 @@ fs.writeFileSync('output.pdf', pdfBuffer);
 
 ---
 
+## 📄 Multi-Page Handling
+
+Nebula handles multi-page documents in two ways to give you maximum flexibility.
+
+### 1. Automatic Overflow (Dynamic Content)
+If a single `<Page>` contains more content than can fit, the layout engine automatically splits it. This is ideal for long text, tables, or dynamic lists.
+
+```tsx
+<Page padding={40}>
+  <Text>This very long text will span multiple pages automatically...</Text>
+</Page>
+```
+
+### 2. Manual Pagination (Explicit Pages)
+For documents with distinct sections (e.g., a Cover Page followed by a Report), you can provide multiple `<Page>` components:
+
+```tsx
+await engine.generate(
+  <>
+    <Page size="A4">
+      <Text>Cover Page</Text>
+    </Page>
+    <Page size="A4">
+      <Text>Second Page with different content...</Text>
+    </Page>
+  </>
+);
+```
+
+---
+
 ## 🏢 NestJS Integration
+
 
 Nebula provides a `NebulaPdfModule` for seamless integration into NestJS environments.
 
