@@ -78,23 +78,22 @@ export class LayoutEngine {
             currentPage.push(fits);
           }
 
-          // Flush the current page
-          pages.push(currentPage);
-
-          // Add any complete overflow pages
-          for (let i = 0; i < overflowPages.length - 1; i++) {
-            pages.push(overflowPages[i]);
-          }
-
-          // The last overflow page becomes the new current page
           if (overflowPages.length > 0) {
+            // Flush the current page and handle overflow
+            pages.push(currentPage);
+
+            // Add any complete overflow pages
+            for (let i = 0; i < overflowPages.length - 1; i++) {
+              pages.push(overflowPages[i]);
+            }
+
+            // The last overflow page becomes the new current page
             currentPage = overflowPages[overflowPages.length - 1];
-            // Estimate remaining height — the overflow page may not be full
-            // For simplicity, start fresh (layout engine refinement in future)
-            remainingHeight = contentHeight;
+            remainingHeight = contentHeight; // Start fresh on new page
           } else {
-            currentPage = [];
-            remainingHeight = contentHeight;
+            // No overflow! The entire node fits after splitting/refining.
+            // Just update remaining height (approximate, next measurement will be accurate)
+            remainingHeight -= item.height; 
           }
         } else {
           // Split failed — treat as atomic and move to next page
