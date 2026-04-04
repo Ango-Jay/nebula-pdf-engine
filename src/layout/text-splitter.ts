@@ -1,5 +1,5 @@
-import type { VNode } from 'preact';
-import type { FontConfig, TextProps } from '../types';
+import type { VNode } from "preact";
+import type { FontConfig, TextProps } from "../types";
 
 // ─── Types ───
 
@@ -40,12 +40,13 @@ export async function calculateTextMetrics(
 ): Promise<TextMetrics> {
   try {
     // Dynamic import — fontkit is ESM-only in newer versions
-    const fontkit = await import('fontkit');
+    const fontkit = await import("fontkit");
 
     // Create a font instance from the buffer
-    const fontBuffer = fontConfig.data instanceof ArrayBuffer
-      ? Buffer.from(fontConfig.data)
-      : fontConfig.data;
+    const fontBuffer =
+      fontConfig.data instanceof ArrayBuffer
+        ? Buffer.from(fontConfig.data)
+        : fontConfig.data;
 
     const font = fontkit.create(fontBuffer as any);
 
@@ -54,7 +55,8 @@ export async function calculateTextMetrics(
     const scale = fontSize / unitsPerEm;
 
     // Sample common characters to get average width
-    const sampleText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';
+    const sampleText =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ";
     const layout = (font as any).layout(sampleText);
 
     const totalAdvanceWidth = layout.glyphs.reduce(
@@ -62,7 +64,8 @@ export async function calculateTextMetrics(
       0,
     );
 
-    const averageCharacterWidth = (totalAdvanceWidth * scale) / sampleText.length;
+    const averageCharacterWidth =
+      (totalAdvanceWidth * scale) / sampleText.length;
 
     // Default line-height is typically 1.2x the font size
     const lineHeight = fontSize * 1.2;
@@ -80,7 +83,10 @@ export async function calculateTextMetrics(
     // Average character width is roughly 0.5–0.6x the font size
     const averageCharacterWidth = fontSize * 0.55;
     const lineHeight = fontSize * 1.2;
-    const charsPerLine = Math.max(Math.floor(containerWidth / averageCharacterWidth), 1);
+    const charsPerLine = Math.max(
+      Math.floor(containerWidth / averageCharacterWidth),
+      1,
+    );
 
     return { averageCharacterWidth, lineHeight, charsPerLine };
   }
@@ -122,12 +128,17 @@ export async function splitTextNode(
   if (!fontConfig) return null;
 
   // Calculate text metrics using the font
-  const metrics = await calculateTextMetrics(fontConfig, fontSize, containerWidth);
+  const metrics = await calculateTextMetrics(
+    fontConfig,
+    fontSize,
+    containerWidth,
+  );
 
   // Override line-height if explicitly set
-  const effectiveLineHeight = typeof customLineHeight === 'number'
-    ? customLineHeight
-    : metrics.lineHeight;
+  const effectiveLineHeight =
+    typeof customLineHeight === "number"
+      ? customLineHeight
+      : metrics.lineHeight;
 
   // How many lines fit in the remaining space?
   const linesThatFit = Math.floor(remainingHeight / effectiveLineHeight);
@@ -174,16 +185,16 @@ export async function splitTextNode(
  * Handles strings, numbers, and arrays of mixed content.
  */
 function extractTextContent(children: any): string {
-  if (children === null || children === undefined) return '';
+  if (children === null || children === undefined) return "";
 
-  if (typeof children === 'string') return children;
-  if (typeof children === 'number') return String(children);
+  if (typeof children === "string") return children;
+  if (typeof children === "number") return String(children);
 
   if (Array.isArray(children)) {
-    return children.map(extractTextContent).join('');
+    return children.map(extractTextContent).join("");
   }
 
-  return '';
+  return "";
 }
 
 /**
@@ -196,7 +207,7 @@ function findWordBoundary(text: string, targetIndex: number): number {
   // Look backward for a space or newline
   for (let i = targetIndex; i >= targetIndex - 50 && i >= 0; i--) {
     const char = text[i];
-    if (char === ' ' || char === '\n' || char === '\t') {
+    if (char === " " || char === "\n" || char === "\t") {
       return i + 1; // Split after the whitespace
     }
   }
@@ -210,10 +221,10 @@ function findWordBoundary(text: string, targetIndex: number): number {
  */
 function createTextVNode(originalProps: any, textContent: string): VNode {
   return {
-    type: 'span',
+    type: "span",
     props: {
       style: {
-        display: 'flex',
+        display: "flex",
         ...originalProps.style,
       },
       children: textContent,

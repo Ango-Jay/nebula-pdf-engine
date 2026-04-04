@@ -7,6 +7,9 @@ export type { GenerateOptions } from './core/engine';
 // Export the React Primitives
 export { Page, Box, Text, Image } from './components/primitives';
 
+// Export hyperscript utilities for users who prefer them over JSX
+export { h, h as createElement, Fragment } from 'preact';
+
 // Core
 export * from './core/engine';
 

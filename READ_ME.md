@@ -28,6 +28,34 @@ npm install nebula-pdf-engine
 
 ---
 
+## ⚙️ TypeScript Configuration
+
+Nebula uses **Preact** for its lightweight JSX runtime. To use JSX in your project, update your `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
+  }
+}
+```
+
+### Alternative: Without JSX
+If you prefer not to use JSX or don't want to change your config, you can use the `createElement` function (or its alias `h`) directly in `.ts` files:
+
+```typescript
+import { PdfEngine, Page, Text, createElement } from 'nebula-pdf-engine';
+
+const pdf = await engine.generate(
+  createElement(Page, { size: 'A4' }, 
+    createElement(Text, { style: { fontSize: 20 } }, 'Hello Workspace!')
+  )
+);
+```
+
+---
+
 ## 🛠️ Quick Start (Standalone)
 
 ```tsx
