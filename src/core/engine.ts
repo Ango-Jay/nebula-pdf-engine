@@ -250,8 +250,8 @@ export class PdfEngine {
         // Resolve the image source to a base64 data URI (pass dimensions for optimization)
         const resolvedSrc = await this.assetResolver.resolveImage(
           src, 
-          props.width, 
-          props.height
+          props.width ? props.width * this.devicePixelRatio : undefined, 
+          props.height ? props.height * this.devicePixelRatio : undefined
         );
         props.src = resolvedSrc;
       }
