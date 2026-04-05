@@ -11,11 +11,11 @@ Powered by **Satori**, **Resvg**, and **pdf-lib**, Nebula provides pixel-perfect
 - **⚛️ Standard JSX**: Use `<Page>`, `<Box>`, `<Text>`, and `<Image>` with Preact.
 - **📏 Flexbox Layout**: Full support for CSS Flexbox via Satori (Yoga).
 - **📄 Multi-Page Engine**: Automatic content overflow detection and smart text splitting across pages.
+- **📐 Precise Measure**: Control the exact content width of your pages with the `contentWidth` override.
 - **📊 First-Class Tables**: Schema-driven tables with automatic column resolution and repeating headers.
-- **🖼️ Smart Assets**: Just-in-time image optimization and resizing via **Sharp**.
+- **🖼️ High-Density Assets**: Crisp SVG and remote image resolution via **Sharp** scaling (Retina ready).
 - **🦅 High Performance**: Powered by a Rust-based rendering pipeline (Resvg).
-- **🛡️ NestJS Native**: First-class support for NestJS with a dynamic module wrapper.
-- **🎨 Retina Quality**: Defaults to 2x pixel density for crisp text and graphics.
+- **🎨 Custom DPI**: Configure your export's device pixel ratio for the perfect balance of size and quality.
 
 ---
 
@@ -192,6 +192,7 @@ The top-level container.
 - `size`: `'A4' | 'LETTER' | 'LEGAL'` (Default: `A4`)
 - `orientation`: `'portrait' | 'landscape'` (Default: `portrait`)
 - `padding`: `number | { top, right, bottom, left }`
+- `contentWidth`: `number`. **Optional**. Explicitly sets the width of the content area. Useful for narrow layouts (like receipts) where you want to restrict the measure area regardless of page size.
 
 ### `<Box>`
 A generic flexbox container.
