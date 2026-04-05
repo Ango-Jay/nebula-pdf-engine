@@ -87,8 +87,8 @@ export class PdfEngine {
     const layoutEngine = new LayoutEngine(this.fonts);
 
     for (const inputPage of inputPageElements) {
-      const { size, orientation, padding } = this.extractPageProps(inputPage);
-      const dimensions = resolvePageDimensions(size, orientation, padding);
+      const { size, orientation, padding, contentWidth } = this.extractPageProps(inputPage);
+      const dimensions = resolvePageDimensions(size, orientation, padding, contentWidth);
 
       // Extract children from the input page
       const inputChildren = this.extractChildren(inputPage);
@@ -111,8 +111,25 @@ export class PdfEngine {
               width: '100%',
               height: '100%',
               backgroundColor: '#fff', // Default background
+              paddingTop: dimensions.padding.top,
+              paddingRight: dimensions.padding.right,
+              paddingBottom: dimensions.padding.bottom,
+              paddingLeft: dimensions.padding.left,
             },
-            children,
+            children: [
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: dimensions.contentWidth,
+                    height: '100%',
+                  },
+                  children,
+                },
+              },
+            ],
           },
           key: null,
           __k: null,
@@ -221,12 +238,14 @@ export class PdfEngine {
     size: PageSize;
     orientation: Orientation;
     padding: Padding | undefined;
+    contentWidth: number | undefined;
   } {
     const props = (pageElement.props || {}) as any;
     return {
       size: props.size ?? 'A4',
       orientation: props.orientation ?? 'portrait',
       padding: props.padding,
+      contentWidth: props.contentWidth,
     };
   }
 

@@ -53,6 +53,8 @@ export interface PageProps {
   orientation?: Orientation;
   /** Page padding in PDF points */
   padding?: Padding;
+  /** Explicit content width in PDF points (overrides padding calculation) */
+  contentWidth?: number;
   /** Page content */
   children: ComponentChildren;
 }
@@ -302,6 +304,7 @@ export function resolvePageDimensions(
   size: PageSize = "A4",
   orientation: Orientation = "portrait",
   padding?: Padding,
+  contentWidthOverride?: number,
 ): ResolvedPageDimensions {
   const base = PAGE_SIZES[size];
   const normalizedPadding = normalizePadding(padding);
@@ -309,11 +312,16 @@ export function resolvePageDimensions(
   const width = orientation === "portrait" ? base.width : base.height;
   const height = orientation === "portrait" ? base.height : base.width;
 
+  const contentHeight =
+    height - normalizedPadding.top - normalizedPadding.bottom;
+  const calculatedContentWidth =
+    width - normalizedPadding.left - normalizedPadding.right;
+
   return {
     width,
     height,
     padding: normalizedPadding,
-    contentWidth: width - normalizedPadding.left - normalizedPadding.right,
-    contentHeight: height - normalizedPadding.top - normalizedPadding.bottom,
+    contentWidth: contentWidthOverride ?? calculatedContentWidth,
+    contentHeight,
   };
 }

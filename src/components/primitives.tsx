@@ -18,7 +18,7 @@ import type { PageProps, BoxProps, TextProps, ImageProps } from '../types';
  * rendered output. The Page component renders its children inside a
  * full-page flex container.
  */
-export function Page({ children, size, orientation, padding }: PageProps) {
+export function Page({ children, size, orientation, padding, contentWidth }: PageProps) {
   // Dimensions are resolved by the engine, not here.
   // This component just wraps children in a flex container.
   return (
@@ -38,6 +38,7 @@ export function Page({ children, size, orientation, padding }: PageProps) {
           ? String(padding)
           : JSON.stringify(padding ?? 0)
       }
+      data-page-content-width={contentWidth}
     >
       {children}
     </div>
