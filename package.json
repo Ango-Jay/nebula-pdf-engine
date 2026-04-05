@@ -6,7 +6,7 @@
     "build": "tsdown --config-loader unrun",
     "test": "vitest run"
   },
-  "keywords": [],
+  "keywords": ["pdf", "typescript", "nestjs"],
   "author": "",
   "license": "ISC",
   "type": "module",
