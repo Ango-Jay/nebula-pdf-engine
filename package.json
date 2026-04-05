@@ -1,6 +1,6 @@
 {
   "name": "nebula-pdf-engine",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "scripts": {
     "build": "tsdown --config-loader unrun",
@@ -8,11 +8,12 @@
   },
   "keywords": ["pdf", "typescript", "nestjs"],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "files": [
     "dist",
-    "READ_ME.md"
+    "LICENSE",
+    "README.md"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
