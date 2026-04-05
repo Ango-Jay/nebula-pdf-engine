@@ -1,4 +1,4 @@
-import type { VNode } from "preact";
+import type { VNode, ComponentChildren } from "preact";
 
 // ─── Page Sizes (in PDF Points: 1pt = 1/72 inch) ───
 
@@ -54,7 +54,7 @@ export interface PageProps {
   /** Page padding in PDF points */
   padding?: Padding;
   /** Page content */
-  children: VNode | VNode[];
+  children: ComponentChildren;
 }
 
 // ─── Font Configuration ───
@@ -205,13 +205,13 @@ export interface SatoriStyle {
 export interface BoxProps {
   /** Flexbox styles applied to this container */
   style?: SatoriStyle;
-  children?: VNode | VNode[] | string | number | (VNode | string | number)[];
+  children?: ComponentChildren;
 }
 
 export interface TextProps {
   /** Typography and layout styles */
   style?: SatoriStyle;
-  children?: string | number | (string | number)[];
+  children?: ComponentChildren;
 }
 
 export interface ImageProps {
