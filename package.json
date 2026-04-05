@@ -1,6 +1,6 @@
 {
   "name": "nebula-pdf-engine",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "scripts": {
     "build": "tsdown --config-loader unrun",
@@ -9,6 +9,14 @@
   "keywords": ["pdf", "typescript", "nestjs"],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ango-Jay/nebula-pdf-engine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Ango-Jay/nebula-pdf-engine/issues"
+  },
+  "homepage": "https://github.com/Ango-Jay/nebula-pdf-engine#readme",
   "type": "module",
   "files": [
     "dist",
