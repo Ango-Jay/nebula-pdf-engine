@@ -1,10 +1,8 @@
 # 🌌 Nebula PDF Engine
 
-A high-performance, server-side PDF generation library that transforms React/JSX templates into beautiful, multi-page PDF documents.
+A high-performance, server-side PDF generation library that transforms React/JSX templates into beautiful, multi-page documents—generate PDFs using React and Tailwind-like Flexbox without Headless Chrome, in a lightweight, edge-ready package that’s 100× smaller than Puppeteer.
 
 Powered by **Satori**, **Resvg**, and **pdf-lib**, Nebula provides pixel-perfect layout control with the familiarity of Flexbox and JSX.
-
----
 
 ## ✨ Features
 
@@ -221,6 +219,17 @@ Nebula doesn't just render a single canvas; it features a recursive **Layout Eng
 2. **Bin Packing**: Elements are distributed into pages according to your `contentHeight`.
 3. **Table Pipeline**: Tables trigger a specialized row-by-row pagination loop with header injection.
 4. **Atomic vs Splittable**: Images, Boxes, and **Table Rows** are "Atomic", while Text is "Splittable".
+
+---
+
+## ⚖️ Nebula vs Alternatives
+
+| Category | Nebula PDF Engine | Puppeteer | pdfmake |
+| --- | --- | --- | --- |
+| Runtime footprint | Lightweight package; no bundled browser binary (typically orders of magnitude smaller than Chromium-based stacks) | Heavy Chromium dependency; large runtime and deployment artifact | Lightweight JS library; smaller than browser-based renderers |
+| Styling model | JSX + Flexbox-style layout (`<Page>`, `<Box>`, `<Text>`, `<Image>`, `<Table>`) | Full HTML/CSS via headless browser rendering | JSON document-definition API with limited CSS-like styling |
+| Edge / Serverless fit | Designed for server-side and edge-friendly runtimes (no browser process required) | Weaker fit for edge/serverless due to browser process, memory, and cold-start overhead | Good serverless fit for Node environments; not JSX/Flexbox-native |
+| Layout engine | Deterministic layout with measurement + pagination, atomic rows, smart text splitting | Browser print/layout engine (powerful but heavier and less predictable for print workflows) | Declarative PDF primitives (tables, columns, stacks) with less web-like layout behavior |
 
 ---
 
