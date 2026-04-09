@@ -4,6 +4,8 @@ A high-performance, server-side PDF generation library that transforms React/JSX
 
 Powered by **Satori**, **Resvg**, and **pdf-lib**, Nebula provides pixel-perfect layout control with the familiarity of Flexbox and JSX.
 
+Ideal for generating dynamic invoices, automated business reports, and high-density shipping labels at the edge.
+
 ## ✨ Features
 
 - **⚛️ Standard JSX**: Use `<Page>`, `<Box>`, `<Text>`, and `<Image>` with Preact.

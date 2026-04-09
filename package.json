@@ -6,8 +6,27 @@
     "build": "tsdown --config-loader unrun",
     "test": "vitest run"
   },
-  "keywords": ["pdf", "typescript", "nestjs"],
-  "author": "",
+  "keywords": [
+    "pdf",
+    "jsx-to-pdf",
+    "html-to-pdf",
+    "typescript",
+    "nestjs",
+    "satori",
+    "resvg",
+    "pdf-lib",
+    "serverless-pdf",
+    "pdf-generator",
+    "puppeteer-alternative",
+    "reporting",
+    "react-pdf",
+    "document-automation"
+  ],
+  "author": {
+    "name": "Jeffrey Ango",
+    "email": "angojeff433@gmail.com",
+    "url": "https://github.com/Ango-Jay"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -16,7 +35,7 @@
   "bugs": {
     "url": "https://github.com/Ango-Jay/nebula-pdf-engine/issues"
   },
-  "homepage": "https://github.com/Ango-Jay/nebula-pdf-engine#readme",
+  "homepage": "https://github.com/Ango-Jay/nebula-pdf-engine",
   "type": "module",
   "files": [
     "dist",
