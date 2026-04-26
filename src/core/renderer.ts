@@ -2,6 +2,7 @@ import satori, { type Font as SatoriFont } from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import type { FontConfig } from '../types';
 import type { VNode } from 'preact';
+import { validateAndSanitizeSvg } from '../utils/svg-validator';
 
 // ─── Types ───
 
@@ -62,7 +63,8 @@ export async function renderToSvg(
  * @returns PNG image as a Buffer
  */
 export function renderToPng(svgString: string, scale: number = 1): Buffer {
-  const resvg = new Resvg(svgString, {
+  const sanitized = validateAndSanitizeSvg(svgString, 'final render (renderToPng)');
+  const resvg = new Resvg(sanitized, {
     font: {
       loadSystemFonts: false,
     },

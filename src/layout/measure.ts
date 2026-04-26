@@ -4,10 +4,11 @@ import { renderToSvg } from '../core/renderer';
 import { Resvg } from '@resvg/resvg-js';
 import { h } from 'preact';
 import { MIN_DIMENSION } from '../types';
+import { validateAndSanitizeSvg } from '../utils/svg-validator';
 
 // ─── Constants ───
 
-const UNCONSTRAINED_HEIGHT = 100_000;
+const UNCONSTRAINED_HEIGHT = 5000;
 
 
 // ─── Types ───
@@ -68,12 +69,14 @@ export async function measureNodeHeight(
 
   const safeWidth = (isNaN(pageWidth) || pageWidth < MIN_DIMENSION) ? MIN_DIMENSION : pageWidth;
 
-  const svg = await renderToSvg(measureWrapper, {
+  let svg = await renderToSvg(measureWrapper, {
     width: safeWidth,
     height: UNCONSTRAINED_HEIGHT,
     fonts,
   });
 
+  // Sanitize and validate before passing to Resvg to prevent Rust panics
+  svg = validateAndSanitizeSvg(svg, 'measurement (measureNodeHeight)');
 
   // Use Resvg to get the content's bounding box
   const resvg = new Resvg(svg, {

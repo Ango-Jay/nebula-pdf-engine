@@ -11,8 +11,11 @@ export const PAGE_SIZES = {
 export type PageSize = keyof typeof PAGE_SIZES;
 export type Orientation = "portrait" | "landscape";
 
-/** The minimum width or height allowed for any element to prevent engine panics */
-export const MIN_DIMENSION = 2;
+/**
+ * Minimum dimension (width/height) for any layout element to prevent zero-dimension panics
+ * and layout division errors.
+ */
+export const MIN_DIMENSION = 1;
 
 // ─── Padding ───
 
