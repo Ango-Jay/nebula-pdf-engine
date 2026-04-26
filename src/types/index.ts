@@ -245,8 +245,10 @@ export interface ColumnDefinition<T> {
   flex?: number;
   /** Text alignment within the column */
   align?: 'left' | 'right' | 'center';
-  /** Custom styles for this specific column's cells */
-  style?: SatoriStyle;
+  /** Custom styles for this specific column's header cell */
+  headerStyle?: SatoriStyle;
+  /** Custom styles for this specific column's data cells */
+  cellStyle?: SatoriStyle;
 }
 
 export interface TableProps<T> {

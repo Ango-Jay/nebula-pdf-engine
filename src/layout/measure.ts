@@ -137,7 +137,8 @@ export async function measureRow(
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
-        ...col.style,
+        ...(isHeader ? col.headerStyle : col.cellStyle),
+        ...col.style, // Keep for backward compatibility if any
       }
     }, h('div', {
         style: {

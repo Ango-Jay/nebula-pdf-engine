@@ -173,7 +173,7 @@ export class LayoutEngine {
     pageHeight: number,
     containerWidth: number,
   ): Promise<TableSegment[]> {
-    const { columns, data, options } = tableNode.props;
+    const { columns, data, options, headerStyle, rowStyle } = tableNode.props;
     const resolvedWidths = this.resolveColumnWidths(columns, containerWidth);
 
     // 1. Measure Header
@@ -277,16 +277,12 @@ export class LayoutEngine {
 
     // Add Header
     if (segment.header) {
-      rows.push(this.createRowVNode(columns, null, headerStyle, true, resolvedWidths));
+      rows.push(this.createRowVNode(null, columns, resolvedWidths, true, false, headerStyle, rowStyle));
     }
 
     // Add Data Rows
     segment.rows.forEach((rowData: any, idx: number) => {
-      let finalRowStyle = { ...rowStyle };
-      if (options?.stripe && idx % 2 === 1) {
-        finalRowStyle.backgroundColor = options.stripeColor || '#f9f9f9';
-      }
-      rows.push(this.createRowVNode(columns, rowData, finalRowStyle, false, resolvedWidths));
+      rows.push(this.createRowVNode(rowData, columns, resolvedWidths, false, (idx % 2 === 1) && !!options?.stripe, headerStyle, rowStyle));
     });
 
     return h('div', {
@@ -300,11 +296,13 @@ export class LayoutEngine {
   }
 
   private createRowVNode(
-    columns: any[],
     rowData: any,
-    rowStyle: any,
+    columns: any[],
+    resolvedWidths: number[],
     isHeader: boolean,
-    resolvedWidths: number[]
+    stripe: boolean,
+    globalHeaderStyle?: any,
+    globalRowStyle?: any,
   ): VNode {
     const cells = columns.map((col, i) => {
       const content = isHeader ? col.header : rowData[col.key];
@@ -312,7 +310,9 @@ export class LayoutEngine {
         display: 'flex',
         flexDirection: 'column',
         padding: 5,
-        ...col.style,
+        ...(isHeader 
+          ? { ...globalHeaderStyle, ...col.headerStyle } 
+          : { ...globalRowStyle, ...col.cellStyle }),
         textAlign: col.align || 'left',
         width: resolvedWidths[i],
         wordBreak: 'break-word',
@@ -338,7 +338,7 @@ export class LayoutEngine {
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
         borderBottomStyle: 'solid',
-        ...rowStyle,
+        ...globalRowStyle,
       }
     } as any, cells) as any;
   }
