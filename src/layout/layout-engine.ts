@@ -1,5 +1,5 @@
 import type { VNode } from 'preact';
-import type { FontConfig, ResolvedPageDimensions, TableProps, TableSegment } from '../types';
+import type { FontConfig, ResolvedPageDimensions, TableProps, TableSegment, TableNode } from '../types';
 import { measureAllChildren, measureRow, type MeasuredNode } from './measure';
 import { splitTextNode } from './text-splitter';
 import { h } from 'preact';
@@ -167,12 +167,12 @@ export class LayoutEngine {
    * Orchestrates the pagination of a Table node.
    */
   private async paginateTable(
-    tableNode: any,
+    tableNode: TableNode<any>,
     remainingHeight: number,
     pageHeight: number,
     containerWidth: number,
   ): Promise<TableSegment[]> {
-    const { columns, data, options } = (tableNode.props as TableProps);
+    const { columns, data, options } = tableNode.props;
     const resolvedWidths = this.resolveColumnWidths(columns, containerWidth);
 
     // 1. Measure Header
@@ -267,7 +267,7 @@ export class LayoutEngine {
   /**
    * Converts a TableSegment into a VNode tree (Box/Text) for rendering.
    */
-  private createTableSegmentVNode(tableNode: any, segment: TableSegment): VNode {
+  private createTableSegmentVNode(tableNode: TableNode<any>, segment: TableSegment): VNode {
     const { columns, options, headerStyle, rowStyle, style } = tableNode.props;
     const { resolvedWidths } = segment;
     

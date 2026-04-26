@@ -231,11 +231,11 @@ export interface ImageProps {
 
 // ─── Table Types ───
 
-export interface ColumnDefinition {
+export interface ColumnDefinition<T> {
   /** Display label for the header */
   header: string;
   /** Property key in the data object */
-  key: string;
+  key: keyof T;
   /** Fixed width in PDF points or percentage (e.g. 100, "20%") */
   width?: number | string;
   /** Flexible width weight (e.g. 1) */
@@ -246,11 +246,11 @@ export interface ColumnDefinition {
   style?: SatoriStyle;
 }
 
-export interface TableProps {
+export interface TableProps<T> {
   /** Column definitions */
-  columns: ColumnDefinition[];
+  columns: ColumnDefinition<T>[];
   /** Data array */
-  data: any[];
+  data: T[];
   /** Outer container styles */
   style?: SatoriStyle;
   /** Header row specific styles */
@@ -283,7 +283,7 @@ export interface TableSegment {
 }
 
 /** Specialized VNode representation for the layout engine */
-export interface TableNode extends VNode<TableProps> {}
+export interface TableNode<T> extends VNode<TableProps<T>> {}
 
 // ─── Internal Types ───
 
