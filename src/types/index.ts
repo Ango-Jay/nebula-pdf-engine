@@ -11,6 +11,9 @@ export const PAGE_SIZES = {
 export type PageSize = keyof typeof PAGE_SIZES;
 export type Orientation = "portrait" | "landscape";
 
+/** The minimum width or height allowed for any element to prevent engine panics */
+export const MIN_DIMENSION = 2;
+
 // ─── Padding ───
 
 export interface PaddingObject {
@@ -322,7 +325,7 @@ export function resolvePageDimensions(
     width,
     height,
     padding: normalizedPadding,
-    contentWidth: contentWidthOverride ?? calculatedContentWidth,
-    contentHeight,
+    contentWidth: Math.max(MIN_DIMENSION, contentWidthOverride ?? calculatedContentWidth),
+    contentHeight: Math.max(MIN_DIMENSION, contentHeight),
   };
 }

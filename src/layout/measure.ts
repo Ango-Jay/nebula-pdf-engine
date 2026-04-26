@@ -2,6 +2,13 @@ import type { VNode } from 'preact';
 import type { FontConfig } from '../types';
 import { renderToSvg } from '../core/renderer';
 import { Resvg } from '@resvg/resvg-js';
+import { h } from 'preact';
+import { MIN_DIMENSION } from '../types';
+
+// ─── Constants ───
+
+const UNCONSTRAINED_HEIGHT = 100_000;
+
 
 // ─── Types ───
 
@@ -59,14 +66,14 @@ export async function measureNodeHeight(
     ref: null,
   } as any as VNode;
 
-  // Use a very tall height so content is not clipped by Satori
-  const UNCONSTRAINED_HEIGHT = 100_000;
+  const safeWidth = (isNaN(pageWidth) || pageWidth < MIN_DIMENSION) ? MIN_DIMENSION : pageWidth;
 
   const svg = await renderToSvg(measureWrapper, {
-    width: pageWidth,
+    width: safeWidth,
     height: UNCONSTRAINED_HEIGHT,
     fonts,
   });
+
 
   // Use Resvg to get the content's bounding box
   const resvg = new Resvg(svg, {
@@ -120,32 +127,28 @@ export async function measureRow(
 
     if (content === undefined || content === null) continue;
 
-    // Build a temporary cell VNode for measurement
-    const cellVNode = {
-      type: 'div',
-      props: {
-        style: {
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%',
-          wordBreak: 'break-word',
-          ...col.style,
-        },
-        children: String(content),
-      },
-      key: null,
-      __k: null,
-      __: null,
-      __b: 0,
-      __e: null,
-      __c: null,
-      __v: 0,
-      __i: 0,
-      constructor: undefined,
-      ref: null,
-    } as any as VNode;
+    // Build a temporary cell VNode for measurement using h() for stability
+    const contentStr = (content === undefined || content === null || String(content) === '') 
+        ? '\u00A0' 
+        : String(content);
 
-    const cellHeight = await measureNodeHeight(cellVNode, width, fonts);
+    const cellVNode = h('div', {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        ...col.style,
+      }
+    }, h('div', {
+        style: {
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            wordBreak: 'break-word',
+        }
+    }, contentStr));
+
+    const cellHeight = await measureNodeHeight(cellVNode as any, width, fonts);
     maxHeight = Math.max(maxHeight, cellHeight);
   }
 

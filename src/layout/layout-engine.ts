@@ -1,5 +1,6 @@
 import type { VNode } from 'preact';
 import type { FontConfig, ResolvedPageDimensions, TableProps, TableSegment, TableNode } from '../types';
+import { MIN_DIMENSION } from '../types';
 import { measureAllChildren, measureRow, type MeasuredNode } from './measure';
 import { splitTextNode } from './text-splitter';
 import { h } from 'preact';
@@ -261,7 +262,8 @@ export class LayoutEngine {
       }
     }
 
-    return widths;
+    // Final pass: ensure all widths are at least the minimum dimension
+    return widths.map(w => (isNaN(w) || w < MIN_DIMENSION) ? MIN_DIMENSION : w);
   }
 
   /**
@@ -317,7 +319,14 @@ export class LayoutEngine {
       };
 
       return h('div', { style: cellStyle }, 
-        String(content ?? '')
+        h('div', { 
+            style: { 
+                display: 'flex', 
+                flexDirection: 'column',
+                width: '100%',
+                wordBreak: 'break-word',
+            } 
+        }, String(content ?? ''))
       );
     });
 
