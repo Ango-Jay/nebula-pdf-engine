@@ -126,7 +126,9 @@ export async function measureRow(
       props: {
         style: {
           display: 'flex',
+          flexDirection: 'column',
           width: '100%',
+          wordBreak: 'break-word',
           ...col.style,
         },
         children: String(content),

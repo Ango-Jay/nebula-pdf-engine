@@ -178,7 +178,7 @@ export class LayoutEngine {
     // 1. Measure Header
     const headerHeight = await measureRow(null, columns, resolvedWidths, this.fonts, true);
 
-    const segments: any[] = [];
+    const segments: TableSegment[] = [];
     let currentRows: any[] = [];
     let currentHeight = remainingHeight;
     let isFirstSegment = true;
@@ -194,7 +194,11 @@ export class LayoutEngine {
 
       if (currentHeight < neededHeight && currentRows.length > 0) {
         // Start a new segment
-        segments.push({ header: isFirstSegment || options?.headerRepeat !== false, rows: currentRows });
+        segments.push({ 
+          header: isFirstSegment || options?.headerRepeat !== false, 
+          rows: currentRows,
+          resolvedWidths 
+        });
         currentRows = [rowData];
         currentHeight = pageHeight - effectiveHeaderHeight - rowHeight;
         isFirstSegment = false;
@@ -209,7 +213,11 @@ export class LayoutEngine {
 
     // Always push at least one segment even if data is empty (to show header)
     if (currentRows.length > 0 || segments.length === 0) {
-      segments.push({ header: true, rows: currentRows });
+      segments.push({ 
+        header: true, 
+        rows: currentRows,
+        resolvedWidths 
+      });
     }
 
     return segments;
@@ -259,22 +267,15 @@ export class LayoutEngine {
   /**
    * Converts a TableSegment into a VNode tree (Box/Text) for rendering.
    */
-  private createTableSegmentVNode(tableNode: any, segment: any): VNode {
+  private createTableSegmentVNode(tableNode: any, segment: TableSegment): VNode {
     const { columns, options, headerStyle, rowStyle, style } = tableNode.props;
-    
-    // We use the absolute widths for the final render to match Satori's layout
-    // We'll need to pass the actual container width here. 
-    // For now, let's assume it's the full content width from the node if possible, 
-    // but the safest is to pass it from paginate. 
-    // Since we don't have it easily here without changing the signature, 
-    // we'll recalculate based on 100% or use a large enough number.
-    // Better: let's change createTableSegmentVNode signature or internal logic.
+    const { resolvedWidths } = segment;
     
     const rows: VNode[] = [];
 
     // Add Header
     if (segment.header) {
-      rows.push(this.createRowVNode(columns, null, headerStyle, true));
+      rows.push(this.createRowVNode(columns, null, headerStyle, true, resolvedWidths));
     }
 
     // Add Data Rows
@@ -283,7 +284,7 @@ export class LayoutEngine {
       if (options?.stripe && idx % 2 === 1) {
         finalRowStyle.backgroundColor = options.stripeColor || '#f9f9f9';
       }
-      rows.push(this.createRowVNode(columns, rowData, finalRowStyle, false));
+      rows.push(this.createRowVNode(columns, rowData, finalRowStyle, false, resolvedWidths));
     });
 
     return h('div', {
@@ -300,28 +301,23 @@ export class LayoutEngine {
     columns: any[],
     rowData: any,
     rowStyle: any,
-    isHeader: boolean
+    isHeader: boolean,
+    resolvedWidths: number[]
   ): VNode {
     const cells = columns.map((col, i) => {
       const content = isHeader ? col.header : rowData[col.key];
       const cellStyle: any = {
         display: 'flex',
+        flexDirection: 'column',
         padding: 5,
         ...col.style,
         textAlign: col.align || 'left',
+        width: resolvedWidths[i],
+        wordBreak: 'break-word',
       };
 
-      // Set width or flex
-      if (typeof col.width === 'number') {
-        cellStyle.width = col.width;
-      } else if (typeof col.width === 'string') {
-        cellStyle.width = col.width;
-      } else {
-        cellStyle.flex = col.flex || 1;
-      }
-
       return h('div', { style: cellStyle }, 
-        h('span', null, String(content ?? ''))
+        String(content ?? '')
       );
     });
 

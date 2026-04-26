@@ -279,6 +279,7 @@ export interface ResolvedRow {
 export interface TableSegment {
   header: boolean;
   rows: any[];
+  resolvedWidths: number[];
 }
 
 /** Specialized VNode representation for the layout engine */
