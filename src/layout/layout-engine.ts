@@ -301,7 +301,16 @@ export class LayoutEngine {
       : null;
 
     const rows = segment.rows.map((rowData: any, idx: number) => 
-      this.createRowVNode(rowData, columns, resolvedWidths, false, (idx % 2 === 1) && !!options?.stripe, headerStyle, rowStyle)
+      this.createRowVNode(
+        rowData,
+        columns,
+        resolvedWidths,
+        false,
+        (idx % 2 === 1) && !!options?.stripe,
+        headerStyle,
+        rowStyle,
+        options?.stripeColor,
+      )
     );
 
     return h('div', {
@@ -324,6 +333,7 @@ export class LayoutEngine {
     stripe: boolean,
     globalHeaderStyle?: any,
     globalRowStyle?: any,
+    stripeColor?: string,
   ): VNode {
     const cells = columns.map((col, i) => {
       const content = isHeader ? col.header : rowData[col.key];
@@ -352,9 +362,9 @@ export class LayoutEngine {
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
         borderBottomStyle: 'solid',
-        backgroundColor: stripe ? '#f9fafb' : 'transparent',
         flexShrink: 0,
         ...globalRowStyle,
+        ...(stripe ? { backgroundColor: stripeColor || '#f9f9f9' } : {}),
       }
     } as any, cells) as any;
   }
