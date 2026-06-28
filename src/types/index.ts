@@ -248,6 +248,11 @@ export interface ColumnDefinition<T> {
   flex?: number;
   /** Text alignment within the column */
   align?: 'left' | 'right' | 'center';
+  /**
+   * @deprecated Use `headerStyle` and/or `cellStyle` instead.
+   * Still supported: applied to both header and data cells before column-specific overrides.
+   */
+  style?: SatoriStyle;
   /** Custom styles for this specific column's header cell */
   headerStyle?: SatoriStyle;
   /** Custom styles for this specific column's data cells */

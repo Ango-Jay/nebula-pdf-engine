@@ -5,6 +5,7 @@ import { Resvg } from '@resvg/resvg-js';
 import { h } from 'preact';
 import { MIN_DIMENSION } from '../types';
 import { validateAndSanitizeSvg } from '../utils/svg-validator';
+import { resolveColumnCellStyle } from './column-styles';
 
 // ─── Constants ───
 
@@ -154,15 +155,13 @@ export async function measureRow(
     // Cell style must perfectly match createRowVNode's cellStyle.
     const cellVNode = h('div', {
       style: {
-        display: 'flex',
-        flexDirection: 'column',
-        padding: 5,
-        ...itemStyle,
-        ...(isHeader ? col.headerStyle : col.cellStyle),
-        ...col.style, // Note: createRowVNode doesn't even have this, but keeping it for safety or remove it?
-        textAlign: col.align || 'left',
-        width: width, // Important: must be after user styles to force resolved width!
-        wordBreak: 'break-word',
+        ...resolveColumnCellStyle(
+          col,
+          isHeader,
+          isHeader ? itemStyle : undefined,
+          isHeader ? undefined : itemStyle,
+        ),
+        width: width, // Must be last — overrides any user-provided width
       }
     }, h('div', {
         style: {

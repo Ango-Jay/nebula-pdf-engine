@@ -3,6 +3,7 @@ import type { FontConfig, ResolvedPageDimensions, TableProps, TableSegment, Tabl
 import { MIN_DIMENSION } from '../types';
 import { measureAllChildren, measureRow, type MeasuredNode } from './measure';
 import { splitTextNode } from './text-splitter';
+import { resolveColumnCellStyle } from './column-styles';
 import { h } from 'preact';
 
 // ─── Types ───
@@ -327,15 +328,8 @@ export class LayoutEngine {
     const cells = columns.map((col, i) => {
       const content = isHeader ? col.header : rowData[col.key];
       const cellStyle: any = {
-        display: 'flex',
-        flexDirection: 'column',
-        padding: 5,
-        ...(isHeader 
-          ? { ...globalHeaderStyle, ...col.headerStyle } 
-          : { ...globalRowStyle, ...col.cellStyle }),
-        textAlign: col.align || 'left',
+        ...resolveColumnCellStyle(col, isHeader, globalHeaderStyle, globalRowStyle),
         width: resolvedWidths[i],
-        wordBreak: 'break-word',
       };
 
       return h('div', { style: cellStyle }, 

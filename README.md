@@ -213,10 +213,12 @@ Renders text strings.
 - `width` / `height`: **Required**. The engine uses these to downsample the image for the PDF, significantly reducing file size.
 
 ### `<Table>`
-- `columns`: Array of `ColumnDefinition` objects (header, key, width/flex).
+- `columns`: Array of `ColumnDefinition` objects (header, key, width/flex, optional `style` / `headerStyle` / `cellStyle`).
 - `data`: Array of objects to render.
 - `options`: `{ stripe, headerRepeat, stripeColor }`.
 - `headerStyle` / `rowStyle`: Style overrides for table elements.
+
+Column styling merge order (later wins): table-level `headerStyle`/`rowStyle` → column `style` (legacy, both header + cells) → column `headerStyle` or `cellStyle`.
 
 ---
 
