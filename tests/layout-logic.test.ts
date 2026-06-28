@@ -59,8 +59,8 @@ describe('Layout Logic', () => {
         { flex: 1 },
       ];
       const resolved = (engine as any).resolveColumnWidths(columns, containerWidth);
-      // Fixed: 600. Remaining: -100. Flex: 0 (Math.max(0, remaining)).
-      expect(resolved).toEqual([400, 200, 0]);
+      // Fixed: 600. Remaining: -100. Flex unit: 0, then clamped to MIN_DIMENSION (1).
+      expect(resolved).toEqual([400, 200, 1]);
     });
   });
 

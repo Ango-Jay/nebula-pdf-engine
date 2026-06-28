@@ -3,7 +3,9 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { PdfEngine, Page, Table } from '../src';
 import * as fs from 'fs';
 import * as path from 'path';
+import { h } from 'preact';
 import { LayoutEngine } from '../src/layout/layout-engine';
+import { resolvePageDimensions } from '../src/types';
 
 describe('Table Component', () => {
   let fontData: Buffer;
@@ -15,10 +17,6 @@ describe('Table Component', () => {
   });
 
   it('should generate a PDF from the real-world transaction dataset', async () => {
-    const engine = new PdfEngine({
-      fonts: [{ name: 'Arial', data: fontData, weight: 400 }],
-    });
-
     const formatDate = (isoString: string) => {
       const date = new Date(isoString);
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -77,9 +75,7 @@ describe('Table Component', () => {
       { date: '2026-02-19T22:00:00Z', id: 'TXN-1049', type: 'debit', description: 'Online Marketplace', credit: 0, debit: 263.77, balance: 17919.3 },
     ];
     
-    // Duplicate to 100 rows to ensure overflow even with small fonts
-    const data = [...transactions, ...transactions.map(t => ({...t, id: t.id + '-2'}))]
-      .map((t) => ({ ...t, date: formatDate(t.date) }));
+    const data = transactions.map((t) => ({ ...t, date: formatDate(t.date) }));
 
     const columns: any[] = [
       {
@@ -136,6 +132,33 @@ describe('Table Component', () => {
       },
     ];
 
+    const fonts = [{ name: 'Arial', data: fontData, weight: 400 as const }];
+    const dims = resolvePageDimensions('A4', 'portrait', 40);
+    const layoutEngine = new LayoutEngine(fonts);
+    const tableNode = h(Table, {
+      columns,
+      data,
+      options: { stripe: true, headerRepeat: true },
+    });
+    const pages = await layoutEngine.paginate([tableNode as any], dims);
+
+    const renderedIds: string[] = [];
+    const seen = new Set<string>();
+    for (const page of pages) {
+      for (const node of page) {
+        const seg = (node as any).props?._segment;
+        if (!seg) continue;
+        for (const row of seg.rows as { id: string }[]) {
+          expect(seen.has(row.id)).toBe(false);
+          seen.add(row.id);
+          renderedIds.push(row.id);
+        }
+      }
+    }
+
+    expect(renderedIds).toEqual(data.map((r) => r.id));
+
+    const engine = new PdfEngine({ fonts });
     const pdfBuffer = await engine.generate(
       <Page padding={40}>
         <Table 
@@ -146,10 +169,8 @@ describe('Table Component', () => {
       </Page>
     );
 
-    // Deep verification: Check that ALL rows are present in the final layout
-    // We'll peek into the internal layout step by running paginate separately
-    console.log('PDF generated successfully. Check [PDF-VERIFY] logs for row integrity.');
     expect(pdfBuffer).toBeDefined();
+    expect(pdfBuffer.length).toBeGreaterThan(1000);
     fs.writeFileSync(path.join(__dirname, 'output-transactions.pdf'), pdfBuffer);
   });
 });
