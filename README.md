@@ -61,7 +61,13 @@ const columns = [
 
 ## ⚙️ TypeScript Configuration
 
-Nebula uses **Preact** for its lightweight JSX runtime. To use JSX in your project, update your `tsconfig.json`:
+Nebula uses **Preact** for its lightweight JSX runtime. Preact is bundled for the runtime, but to resolve the JSX types in TypeScript, you need to install it as a development dependency:
+
+```bash
+npm install -D preact
+```
+
+Then, configure your `tsconfig.json` to use Preact's JSX factory:
 
 ```json
 {
