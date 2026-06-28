@@ -60,22 +60,28 @@
   "peerDependencies": {
     "@nestjs/common": "^10.0.0 || ^11.0.0",
     "@nestjs/core": "^10.0.0 || ^11.0.0",
+    "preact": "^10.29.1",
     "reflect-metadata": "^0.1.13 || ^0.2.0"
   },
   "devDependencies": {
     "@nestjs/common": "^11.0.11",
     "@nestjs/core": "^11.0.11",
     "@types/node": "^25.5.2",
+    "preact": "^10.29.1",
     "reflect-metadata": "^0.2.2",
     "tsdown": "^0.21.7",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
+  "peerDependenciesMeta": {
+    "preact": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
     "fontkit": "^2.0.4",
     "pdf-lib": "^1.17.1",
-    "preact": "^10.29.1",
     "satori": "^0.26.0",
     "sharp": "^0.34.5"
   }
