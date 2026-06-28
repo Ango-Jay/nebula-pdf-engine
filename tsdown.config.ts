@@ -16,4 +16,6 @@ export default defineConfig({
     '@nestjs/core', 
     'reflect-metadata'
   ],
+  // FORCE tsup to compile Preact directly into the output files
+  noExternal: ['preact'],
 });
