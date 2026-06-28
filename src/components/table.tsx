@@ -20,10 +20,11 @@ import type { TableProps } from '../types';
  * <Table columns={columns} data={transactions} options={{ stripe: true }} />
  * ```
  */
-export const Table: FunctionalComponent<TableProps> = (_props) => {
+export function Table<T>(props: TableProps<T>) {
   // The engine will intercept this component during its prepass.
   // We return a "marker" element that holds the props.
-  return h('table-internal', { ..._props, children: [] });
-};
+  return h('table-internal', { ...props, children: [] } as any);
+}
 
 Table.displayName = 'NebulaPdfTable';
+(Table as any).__isNebulaTable = true;

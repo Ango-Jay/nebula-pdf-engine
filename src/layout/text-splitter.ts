@@ -1,5 +1,5 @@
 import type { VNode } from "preact";
-import type { FontConfig, TextProps } from "../types";
+import { type FontConfig, type TextProps, MIN_DIMENSION } from "../types";
 
 // ─── Types ───
 
@@ -38,6 +38,7 @@ export async function calculateTextMetrics(
   fontSize: number,
   containerWidth: number,
 ): Promise<TextMetrics> {
+  const safeWidth = Math.max(MIN_DIMENSION, containerWidth);
   try {
     // Dynamic import — fontkit is ESM-only in newer versions
     const fontkit = await import("fontkit");
@@ -71,7 +72,7 @@ export async function calculateTextMetrics(
     const lineHeight = fontSize * 1.2;
 
     // Characters that fit on one line
-    const charsPerLine = Math.floor(containerWidth / averageCharacterWidth);
+    const charsPerLine = Math.floor(safeWidth / averageCharacterWidth);
 
     return {
       averageCharacterWidth,
@@ -84,7 +85,7 @@ export async function calculateTextMetrics(
     const averageCharacterWidth = fontSize * 0.55;
     const lineHeight = fontSize * 1.2;
     const charsPerLine = Math.max(
-      Math.floor(containerWidth / averageCharacterWidth),
+      Math.floor(safeWidth / averageCharacterWidth),
       1,
     );
 
@@ -113,6 +114,7 @@ export async function splitTextNode(
   fonts: FontConfig[],
   containerWidth: number,
 ): Promise<SplitResult | null> {
+  const safeWidth = Math.max(MIN_DIMENSION, containerWidth);
   const props = textNode.props as any;
   const textContent = extractTextContent(props.children);
 
@@ -131,7 +133,7 @@ export async function splitTextNode(
   const metrics = await calculateTextMetrics(
     fontConfig,
     fontSize,
-    containerWidth,
+    safeWidth,
   );
 
   // Override line-height if explicitly set

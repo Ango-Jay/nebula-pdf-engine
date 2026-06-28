@@ -1,7 +1,9 @@
 import type { VNode } from 'preact';
-import type { FontConfig, ResolvedPageDimensions, TableProps, TableSegment } from '../types';
+import type { FontConfig, ResolvedPageDimensions, TableProps, TableSegment, TableNode } from '../types';
+import { MIN_DIMENSION } from '../types';
 import { measureAllChildren, measureRow, type MeasuredNode } from './measure';
 import { splitTextNode } from './text-splitter';
+import { resolveColumnCellStyle } from './column-styles';
 import { h } from 'preact';
 
 // ─── Types ───
@@ -59,11 +61,17 @@ export class LayoutEngine {
 
     for (const item of measured) {
       if (this.isTableNode(item.node)) {
+        const tableNode = item.node as any;
+        const { columns, headerStyle } = tableNode.props;
+        const resolvedWidths = this.resolveColumnWidths(columns, contentWidth);
+        const headerHeight = await measureRow(null, columns, resolvedWidths, this.fonts, true, headerStyle);
+
         // Table Node — run specialized table pagination
         const tableSegments = await this.paginateTable(
-          item.node as any,
-          remainingHeight,
+          tableNode,
           contentHeight,
+          remainingHeight,
+          headerHeight,
           contentWidth,
         );
 
@@ -71,24 +79,30 @@ export class LayoutEngine {
         for (let i = 0; i < tableSegments.length; i++) {
           const segment = tableSegments[i];
           const segmentVNode = this.createTableSegmentVNode(item.node as any, segment);
+          const segmentHeight = await this.measureTableSegment(item.node as any, segment);
 
           if (i === 0) {
             // First segment fits (partially) on the current page
             currentPage.push(segmentVNode);
-            // We flush the current page immediately after a table segment if it triggers overflow
+            
             if (tableSegments.length > 1) {
+              // We have more segments, flush this page
               pages.push(currentPage);
               currentPage = [];
               remainingHeight = contentHeight;
+            } else {
+              // Only one segment — subtract its height
+              remainingHeight -= segmentHeight;
             }
           } else {
             // Subsequent segments get their own fresh pages
             if (i < tableSegments.length - 1) {
+              // Full intermediate pages
               pages.push([segmentVNode]);
             } else {
               // The last segment becomes the start of the new current page
               currentPage = [segmentVNode];
-              remainingHeight = contentHeight; // Approximate (will be refined by next item)
+              remainingHeight = contentHeight - segmentHeight;
             }
           }
         }
@@ -167,49 +181,67 @@ export class LayoutEngine {
    * Orchestrates the pagination of a Table node.
    */
   private async paginateTable(
-    tableNode: any,
-    remainingHeight: number,
+    tableNode: TableNode<any>,
     pageHeight: number,
-    containerWidth: number,
+    remainingHeight: number,
+    headerHeight: number,
+    contentWidth: number,
   ): Promise<TableSegment[]> {
-    const { columns, data, options } = (tableNode.props as TableProps);
-    const resolvedWidths = this.resolveColumnWidths(columns, containerWidth);
+    const { data, columns, options, headerStyle, rowStyle } = tableNode.props;
+    const resolvedWidths = this.resolveColumnWidths(columns, contentWidth);
 
-    // 1. Measure Header
-    const headerHeight = await measureRow(null, columns, resolvedWidths, this.fonts, true);
-
-    const segments: any[] = [];
+    const segments: TableSegment[] = [];
     let currentRows: any[] = [];
     let currentHeight = remainingHeight;
     let isFirstSegment = true;
 
     for (let i = 0; i < data.length; i++) {
       const rowData = data[i];
-      const rowHeight = await measureRow(rowData, columns, resolvedWidths, this.fonts, false);
+      const rowHeight = await measureRow(rowData, columns, resolvedWidths, this.fonts, false, rowStyle);
 
       // Check if we need to start a new page
-      // Subtract headerHeight because every NEW page MAY have a header
-      const effectiveHeaderHeight = (isFirstSegment || options?.headerRepeat !== false) ? headerHeight : 0;
-      const neededHeight = rowHeight + effectiveHeaderHeight;
+      const innerHeaderHeight = options?.headerRepeat !== false ? headerHeight : 0;
+      
+      // If this is the start of a new segment, we MUST account for the header
+      const neededHeaderHeight = (currentRows.length === 0) 
+        ? (isFirstSegment ? headerHeight : innerHeaderHeight) 
+        : 0;
+      const neededHeight = rowHeight + neededHeaderHeight;
 
+      // Split only when we have rows to flush and the next row doesn't fit
       if (currentHeight < neededHeight && currentRows.length > 0) {
         // Start a new segment
-        segments.push({ header: isFirstSegment || options?.headerRepeat !== false, rows: currentRows });
+        segments.push({ 
+          header: isFirstSegment || options?.headerRepeat !== false, 
+          rows: currentRows,
+          resolvedWidths 
+        });
         currentRows = [rowData];
-        currentHeight = pageHeight - effectiveHeaderHeight - rowHeight;
+        currentHeight = pageHeight - innerHeaderHeight - rowHeight;
         isFirstSegment = false;
       } else {
         currentRows.push(rowData);
         currentHeight -= rowHeight;
         if (currentRows.length === 1 && (isFirstSegment || options?.headerRepeat !== false)) {
-            currentHeight -= headerHeight; // Account for header on this page
+            currentHeight -= headerHeight;
         }
       }
     }
 
-    // Always push at least one segment even if data is empty (to show header)
-    if (currentRows.length > 0 || segments.length === 0) {
-      segments.push({ header: true, rows: currentRows });
+    // Always push the final remaining rows
+    if (currentRows.length > 0) {
+      segments.push({ 
+        header: isFirstSegment || options?.headerRepeat !== false, 
+        rows: currentRows,
+        resolvedWidths 
+      });
+    } else if (segments.length === 0) {
+      // Empty table — at least show the header
+      segments.push({ 
+        header: true, 
+        rows: [],
+        resolvedWidths 
+      });
     }
 
     return segments;
@@ -253,75 +285,72 @@ export class LayoutEngine {
       }
     }
 
-    return widths;
+    // Final pass: ensure all widths are at least the minimum dimension
+    return widths.map(w => (isNaN(w) || w < MIN_DIMENSION) ? MIN_DIMENSION : w);
   }
 
   /**
    * Converts a TableSegment into a VNode tree (Box/Text) for rendering.
    */
-  private createTableSegmentVNode(tableNode: any, segment: any): VNode {
+  private createTableSegmentVNode(tableNode: TableNode<any>, segment: TableSegment): VNode {
     const { columns, options, headerStyle, rowStyle, style } = tableNode.props;
+    const { resolvedWidths } = segment;
     
-    // We use the absolute widths for the final render to match Satori's layout
-    // We'll need to pass the actual container width here. 
-    // For now, let's assume it's the full content width from the node if possible, 
-    // but the safest is to pass it from paginate. 
-    // Since we don't have it easily here without changing the signature, 
-    // we'll recalculate based on 100% or use a large enough number.
-    // Better: let's change createTableSegmentVNode signature or internal logic.
-    
-    const rows: VNode[] = [];
+    const header = segment.header 
+      ? this.createRowVNode(null, columns, resolvedWidths, true, false, headerStyle, rowStyle)
+      : null;
 
-    // Add Header
-    if (segment.header) {
-      rows.push(this.createRowVNode(columns, null, headerStyle, true));
-    }
-
-    // Add Data Rows
-    segment.rows.forEach((rowData: any, idx: number) => {
-      let finalRowStyle = { ...rowStyle };
-      if (options?.stripe && idx % 2 === 1) {
-        finalRowStyle.backgroundColor = options.stripeColor || '#f9f9f9';
-      }
-      rows.push(this.createRowVNode(columns, rowData, finalRowStyle, false));
-    });
+    const rows = segment.rows.map((rowData: any, idx: number) => 
+      this.createRowVNode(
+        rowData,
+        columns,
+        resolvedWidths,
+        false,
+        (idx % 2 === 1) && !!options?.stripe,
+        headerStyle,
+        rowStyle,
+        options?.stripeColor,
+      )
+    );
 
     return h('div', {
       style: {
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
+        flexShrink: 0,
         ...style,
-      }
-    } as any, rows) as any;
+      },
+      _segment: segment,
+    } as any, header ? [header, ...rows] : rows) as any;
   }
 
   private createRowVNode(
-    columns: any[],
     rowData: any,
-    rowStyle: any,
-    isHeader: boolean
+    columns: any[],
+    resolvedWidths: number[],
+    isHeader: boolean,
+    stripe: boolean,
+    globalHeaderStyle?: any,
+    globalRowStyle?: any,
+    stripeColor?: string,
   ): VNode {
     const cells = columns.map((col, i) => {
       const content = isHeader ? col.header : rowData[col.key];
       const cellStyle: any = {
-        display: 'flex',
-        padding: 5,
-        ...col.style,
-        textAlign: col.align || 'left',
+        ...resolveColumnCellStyle(col, isHeader, globalHeaderStyle, globalRowStyle),
+        width: resolvedWidths[i],
       };
 
-      // Set width or flex
-      if (typeof col.width === 'number') {
-        cellStyle.width = col.width;
-      } else if (typeof col.width === 'string') {
-        cellStyle.width = col.width;
-      } else {
-        cellStyle.flex = col.flex || 1;
-      }
-
       return h('div', { style: cellStyle }, 
-        h('span', null, String(content ?? ''))
+        h('div', { 
+            style: { 
+                display: 'flex', 
+                flexDirection: 'column',
+                width: '100%',
+                wordBreak: 'break-word',
+            } 
+        }, String(content ?? ''))
       );
     });
 
@@ -333,13 +362,22 @@ export class LayoutEngine {
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
         borderBottomStyle: 'solid',
-        ...rowStyle,
+        flexShrink: 0,
+        ...globalRowStyle,
+        ...(stripe ? { backgroundColor: stripeColor || '#f9f9f9' } : {}),
       }
     } as any, cells) as any;
   }
 
   private isTableNode(node: VNode): boolean {
-    return (node.type as any)?.displayName === 'NebulaPdfTable' || node.type === 'table-internal';
+    const type = node.type as any;
+    const isTable = (
+      type?.__isNebulaTable === true ||
+      type?.displayName === 'NebulaPdfTable' || 
+      node.type === 'table-internal'
+    );
+    
+    return isTable;
   }
 
   /**
@@ -421,5 +459,25 @@ export class LayoutEngine {
       fits: splitResult.fits,
       overflowPages,
     };
+  }
+
+  /**
+   * Calculates the total height of a table segment by measuring its rows.
+   */
+  private async measureTableSegment(tableNode: TableNode<any>, segment: TableSegment): Promise<number> {
+    const { columns, headerStyle, rowStyle } = tableNode.props;
+    const { rows, header, resolvedWidths } = segment;
+    
+    let totalHeight = 0;
+
+    if (header) {
+      totalHeight += await measureRow(null, columns, resolvedWidths, this.fonts, true, headerStyle);
+    }
+
+    for (const rowData of rows) {
+      totalHeight += await measureRow(rowData, columns, resolvedWidths, this.fonts, false, rowStyle);
+    }
+
+    return totalHeight;
   }
 }

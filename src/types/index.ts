@@ -11,6 +11,12 @@ export const PAGE_SIZES = {
 export type PageSize = keyof typeof PAGE_SIZES;
 export type Orientation = "portrait" | "landscape";
 
+/**
+ * Minimum dimension (width/height) for any layout element to prevent zero-dimension panics
+ * and layout division errors.
+ */
+export const MIN_DIMENSION = 1;
+
 // ─── Padding ───
 
 export interface PaddingObject {
@@ -231,26 +237,33 @@ export interface ImageProps {
 
 // ─── Table Types ───
 
-export interface ColumnDefinition {
+export interface ColumnDefinition<T> {
   /** Display label for the header */
   header: string;
   /** Property key in the data object */
-  key: string;
+  key: keyof T;
   /** Fixed width in PDF points or percentage (e.g. 100, "20%") */
   width?: number | string;
   /** Flexible width weight (e.g. 1) */
   flex?: number;
   /** Text alignment within the column */
   align?: 'left' | 'right' | 'center';
-  /** Custom styles for this specific column's cells */
+  /**
+   * @deprecated Use `headerStyle` and/or `cellStyle` instead.
+   * Still supported: applied to both header and data cells before column-specific overrides.
+   */
   style?: SatoriStyle;
+  /** Custom styles for this specific column's header cell */
+  headerStyle?: SatoriStyle;
+  /** Custom styles for this specific column's data cells */
+  cellStyle?: SatoriStyle;
 }
 
-export interface TableProps {
+export interface TableProps<T> {
   /** Column definitions */
-  columns: ColumnDefinition[];
+  columns: ColumnDefinition<T>[];
   /** Data array */
-  data: any[];
+  data: T[];
   /** Outer container styles */
   style?: SatoriStyle;
   /** Header row specific styles */
@@ -279,10 +292,11 @@ export interface ResolvedRow {
 export interface TableSegment {
   header: boolean;
   rows: any[];
+  resolvedWidths: number[];
 }
 
 /** Specialized VNode representation for the layout engine */
-export interface TableNode extends VNode<TableProps> {}
+export interface TableNode<T> extends VNode<TableProps<T>> {}
 
 // ─── Internal Types ───
 
@@ -321,7 +335,7 @@ export function resolvePageDimensions(
     width,
     height,
     padding: normalizedPadding,
-    contentWidth: contentWidthOverride ?? calculatedContentWidth,
-    contentHeight,
+    contentWidth: Math.max(MIN_DIMENSION, contentWidthOverride ?? calculatedContentWidth),
+    contentHeight: Math.max(MIN_DIMENSION, contentHeight),
   };
 }

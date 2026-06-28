@@ -2,6 +2,15 @@ import type { VNode } from 'preact';
 import type { FontConfig } from '../types';
 import { renderToSvg } from '../core/renderer';
 import { Resvg } from '@resvg/resvg-js';
+import { h } from 'preact';
+import { MIN_DIMENSION } from '../types';
+import { validateAndSanitizeSvg } from '../utils/svg-validator';
+import { resolveColumnCellStyle } from './column-styles';
+
+// ─── Constants ───
+
+const UNCONSTRAINED_HEIGHT = 5000;
+
 
 // ─── Types ───
 
@@ -35,6 +44,22 @@ export async function measureNodeHeight(
   pageWidth: number,
   fonts: FontConfig[],
 ): Promise<number> {
+  // Resvg getBBox only measures painted pixels (ignoring padding/margins).
+  // We add a 1px colored marker above and below the node to force the bbox 
+  // to encompass the entire CSS layout bounds.
+  const marker = {
+    type: 'div',
+    props: {
+      style: {
+        width: '100%',
+        height: 1,
+        flexShrink: 0,
+        backgroundColor: '#000',
+      }
+    },
+    key: null, __k: null, __: null, __b: 0, __e: null, __c: null, __v: 0, __i: 0, constructor: undefined, ref: null,
+  } as any;
+
   // Wrap the node in a full-width container so Satori can compute
   // text wrapping and flex layout at the correct width
   const measureWrapper = {
@@ -45,7 +70,7 @@ export async function measureNodeHeight(
         flexDirection: 'column',
         width: '100%',
       },
-      children: node,
+      children: [marker, node, marker],
     },
     key: null,
     __k: null,
@@ -59,14 +84,16 @@ export async function measureNodeHeight(
     ref: null,
   } as any as VNode;
 
-  // Use a very tall height so content is not clipped by Satori
-  const UNCONSTRAINED_HEIGHT = 100_000;
+  const safeWidth = (isNaN(pageWidth) || pageWidth < MIN_DIMENSION) ? MIN_DIMENSION : pageWidth;
 
-  const svg = await renderToSvg(measureWrapper, {
-    width: pageWidth,
+  let svg = await renderToSvg(measureWrapper, {
+    width: safeWidth,
     height: UNCONSTRAINED_HEIGHT,
     fonts,
   });
+
+  // Sanitize and validate before passing to Resvg to prevent Rust panics
+  svg = validateAndSanitizeSvg(svg, 'measurement (measureNodeHeight)');
 
   // Use Resvg to get the content's bounding box
   const resvg = new Resvg(svg, {
@@ -75,9 +102,8 @@ export async function measureNodeHeight(
 
   const bbox = resvg.getBBox();
   
-  // Return the content height. If for some reason the BBox fails (empty SVG), 
-  // return 0 so it doesn't trigger unnecessary page breaks.
-  return bbox?.height ?? 0;
+  // Subtract the 2px of markers to get the node's true layout height
+  return bbox ? Math.max(0, bbox.height - 2) : 0;
 }
 
 /**
@@ -110,6 +136,7 @@ export async function measureRow(
   resolvedWidths: number[],
   fonts: FontConfig[],
   isHeader: boolean = false,
+  itemStyle?: any,
 ): Promise<number> {
   let maxHeight = 0;
 
@@ -120,33 +147,36 @@ export async function measureRow(
 
     if (content === undefined || content === null) continue;
 
-    // Build a temporary cell VNode for measurement
-    const cellVNode = {
-      type: 'div',
-      props: {
-        style: {
-          display: 'flex',
-          width: '100%',
-          ...col.style,
-        },
-        children: String(content),
-      },
-      key: null,
-      __k: null,
-      __: null,
-      __b: 0,
-      __e: null,
-      __c: null,
-      __v: 0,
-      __i: 0,
-      constructor: undefined,
-      ref: null,
-    } as any as VNode;
+    // Build a temporary cell VNode for measurement using h() for stability
+    const contentStr = (content === undefined || content === null || String(content) === '') 
+        ? '\u00A0' 
+        : String(content);
 
-    const cellHeight = await measureNodeHeight(cellVNode, width, fonts);
+    // Cell style must perfectly match createRowVNode's cellStyle.
+    const cellVNode = h('div', {
+      style: {
+        ...resolveColumnCellStyle(
+          col,
+          isHeader,
+          isHeader ? itemStyle : undefined,
+          isHeader ? undefined : itemStyle,
+        ),
+        width: width, // Must be last — overrides any user-provided width
+      }
+    }, h('div', {
+        style: {
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            wordBreak: 'break-word',
+        }
+    }, contentStr));
+
+    const cellHeight = await measureNodeHeight(cellVNode as any, width, fonts);
     maxHeight = Math.max(maxHeight, cellHeight);
   }
 
-  return maxHeight;
+  // Add 1px for the row's borderBottomWidth (applied in createRowVNode)
+  return maxHeight + 1;
 }
 
