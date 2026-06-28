@@ -3,19 +3,31 @@ import { defineConfig } from 'tsdown';
 export default defineConfig({
   entry: ['./src/index.ts'],
   format: ['esm', 'cjs'],
-  dts: true,
   clean: true,
   platform: 'node',
-  // We bundle preact so the user doesn't have to install it
+  
+  // 1. Generate type declarations cleanly
+  dts: {
+    // Explicitly tells the type compiler NOT to inline raw code files from node_modules/preact
+    compilerOptions: {
+      skipLibCheck: true,
+    }
+  },
 
-  // Keep Sharp, Resvg, and NestJS external
-  external: [
-    'sharp', 
-    '@resvg/resvg-js', 
-    '@nestjs/common', 
-    '@nestjs/core', 
-    'reflect-metadata'
-  ],
-  // FORCE tsup to compile Preact directly into the output files
-  noExternal: ['preact'],
+  deps: {
+    neverBundle: [
+      'sharp', 
+      '@resvg/resvg-js', 
+      '@nestjs/common', 
+      '@nestjs/core', 
+      'reflect-metadata',
+      // Force the type processor to keep preact external in types
+      'preact',
+      'preact/jsx-runtime'
+    ],
+    
+    alwaysBundle: [
+      /^preact(\/.*)?$/
+    ],
+  },
 });
