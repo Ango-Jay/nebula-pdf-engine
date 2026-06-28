@@ -32,6 +32,9 @@
     "type": "git",
     "url": "git+https://github.com/Ango-Jay/nebula-pdf-engine.git"
   },
+  "publishConfig": {
+    "provenance": true
+  },
   "bugs": {
     "url": "https://github.com/Ango-Jay/nebula-pdf-engine/issues"
   },
