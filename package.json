@@ -1,6 +1,6 @@
 {
   "name": "nebula-pdf-engine",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "",
   "scripts": {
     "build": "tsdown --config-loader unrun",
