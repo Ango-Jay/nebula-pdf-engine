@@ -119,16 +119,19 @@ Accurate measurement is the foundation of correct pagination. The engine uses **
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  1. Wrap VNode in a full-width flex container    │
-│  2. Render to SVG via Satori                     │
+│  1. Inject 1px layout markers above/below node   │
+│  2. Wrap in a full-width flex container          │
+│  3. Render to SVG via Satori                     │
 │     (width = contentWidth, height = 5000)        │
-│  3. Parse SVG with Resvg                         │
-│  4. Call getBBox() → exact bounding box           │
-│  5. Return bbox.height                           │
+│  4. Parse SVG with Resvg                         │
+│  5. Call getBBox() → exact bounding box          │
+│  6. Return bbox.height - 2 (subtract markers)    │
 └─────────────────────────────────────────────────┘
 ```
 
-**Why 5000px height?** We use an "unconstrained" height so Satori doesn't clip or compress the content. The content renders at its natural height, and `getBBox()` tells us exactly how tall it actually is.
+**Why 5000px height?** We use an "unconstrained" height so Satori doesn't clip or compress the content. The content renders at its natural height.
+
+**Why layout markers?** Resvg's `getBBox()` only measures painted pixels (like text glyphs). It ignores CSS padding, margins, and gaps. By injecting a visible 1px block at the top and bottom of the element during measurement, we force the bounding box to capture the entire CSS layout footprint, including any padding.
 
 **Why render-based?** Estimating height from font metrics and text length is error-prone — it can't account for flexbox wrapping, padding, borders, nested elements, or dynamic font shaping. By rendering through the same Satori pipeline used for final output, measurements match reality exactly.
 
@@ -137,10 +140,9 @@ Accurate measurement is the foundation of correct pagination. The engine uses **
 Tables need per-row measurement because each row can have a different height (due to text wrapping in cells). For each row:
 
 1. Build a temporary cell VNode for each column
-2. Measure each cell at its resolved column width using `measureNodeHeight()`
-3. Return the **maximum** cell height (the tallest cell determines the row height)
-
-This ensures rows with long text in one column correctly account for the wrapped height.
+2. Merge user-provided `cellStyle` with the dynamically calculated `width`. **Crucially, the dynamically calculated width must be applied last** so it overrides any user-provided widths (e.g. `width: 120`). This ensures the text wraps identically during measurement and actual rendering.
+3. Measure each cell using `measureNodeHeight()`
+4. Return the **maximum** cell height (the tallest cell determines the row height)
 
 ### `measureTableSegment()` — Segment height
 
