@@ -43,6 +43,22 @@ export async function measureNodeHeight(
   pageWidth: number,
   fonts: FontConfig[],
 ): Promise<number> {
+  // Resvg getBBox only measures painted pixels (ignoring padding/margins).
+  // We add a 1px colored marker above and below the node to force the bbox 
+  // to encompass the entire CSS layout bounds.
+  const marker = {
+    type: 'div',
+    props: {
+      style: {
+        width: '100%',
+        height: 1,
+        flexShrink: 0,
+        backgroundColor: '#000',
+      }
+    },
+    key: null, __k: null, __: null, __b: 0, __e: null, __c: null, __v: 0, __i: 0, constructor: undefined, ref: null,
+  } as any;
+
   // Wrap the node in a full-width container so Satori can compute
   // text wrapping and flex layout at the correct width
   const measureWrapper = {
@@ -53,7 +69,7 @@ export async function measureNodeHeight(
         flexDirection: 'column',
         width: '100%',
       },
-      children: node,
+      children: [marker, node, marker],
     },
     key: null,
     __k: null,
@@ -85,9 +101,8 @@ export async function measureNodeHeight(
 
   const bbox = resvg.getBBox();
   
-  // Return the content height. If for some reason the BBox fails (empty SVG), 
-  // return 0 so it doesn't trigger unnecessary page breaks.
-  return bbox?.height ?? 0;
+  // Subtract the 2px of markers to get the node's true layout height
+  return bbox ? Math.max(0, bbox.height - 2) : 0;
 }
 
 /**
@@ -120,6 +135,7 @@ export async function measureRow(
   resolvedWidths: number[],
   fonts: FontConfig[],
   isHeader: boolean = false,
+  itemStyle?: any,
 ): Promise<number> {
   let maxHeight = 0;
 
@@ -135,13 +151,18 @@ export async function measureRow(
         ? '\u00A0' 
         : String(content);
 
+    // Cell style must perfectly match createRowVNode's cellStyle.
     const cellVNode = h('div', {
       style: {
         display: 'flex',
         flexDirection: 'column',
-        width: '100%',
+        padding: 5,
+        ...itemStyle,
         ...(isHeader ? col.headerStyle : col.cellStyle),
-        ...col.style, // Keep for backward compatibility if any
+        ...col.style, // Note: createRowVNode doesn't even have this, but keeping it for safety or remove it?
+        textAlign: col.align || 'left',
+        width: width, // Important: must be after user styles to force resolved width!
+        wordBreak: 'break-word',
       }
     }, h('div', {
         style: {
@@ -156,6 +177,7 @@ export async function measureRow(
     maxHeight = Math.max(maxHeight, cellHeight);
   }
 
-  return maxHeight;
+  // Add 1px for the row's borderBottomWidth (applied in createRowVNode)
+  return maxHeight + 1;
 }
 

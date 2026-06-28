@@ -27,3 +27,4 @@ export function Table<T>(props: TableProps<T>) {
 }
 
 Table.displayName = 'NebulaPdfTable';
+(Table as any).__isNebulaTable = true;

@@ -60,11 +60,17 @@ export class LayoutEngine {
 
     for (const item of measured) {
       if (this.isTableNode(item.node)) {
+        const tableNode = item.node as any;
+        const { columns, headerStyle } = tableNode.props;
+        const resolvedWidths = this.resolveColumnWidths(columns, contentWidth);
+        const headerHeight = await measureRow(null, columns, resolvedWidths, this.fonts, true, headerStyle);
+
         // Table Node — run specialized table pagination
         const tableSegments = await this.paginateTable(
-          item.node as any,
-          remainingHeight,
+          tableNode,
           contentHeight,
+          remainingHeight,
+          headerHeight,
           contentWidth,
         );
 
@@ -72,24 +78,30 @@ export class LayoutEngine {
         for (let i = 0; i < tableSegments.length; i++) {
           const segment = tableSegments[i];
           const segmentVNode = this.createTableSegmentVNode(item.node as any, segment);
+          const segmentHeight = await this.measureTableSegment(item.node as any, segment);
 
           if (i === 0) {
             // First segment fits (partially) on the current page
             currentPage.push(segmentVNode);
-            // We flush the current page immediately after a table segment if it triggers overflow
+            
             if (tableSegments.length > 1) {
+              // We have more segments, flush this page
               pages.push(currentPage);
               currentPage = [];
               remainingHeight = contentHeight;
+            } else {
+              // Only one segment — subtract its height
+              remainingHeight -= segmentHeight;
             }
           } else {
             // Subsequent segments get their own fresh pages
             if (i < tableSegments.length - 1) {
+              // Full intermediate pages
               pages.push([segmentVNode]);
             } else {
               // The last segment becomes the start of the new current page
               currentPage = [segmentVNode];
-              remainingHeight = contentHeight; // Approximate (will be refined by next item)
+              remainingHeight = contentHeight - segmentHeight;
             }
           }
         }
@@ -169,15 +181,13 @@ export class LayoutEngine {
    */
   private async paginateTable(
     tableNode: TableNode<any>,
-    remainingHeight: number,
     pageHeight: number,
-    containerWidth: number,
+    remainingHeight: number,
+    headerHeight: number,
+    contentWidth: number,
   ): Promise<TableSegment[]> {
-    const { columns, data, options, headerStyle, rowStyle } = tableNode.props;
-    const resolvedWidths = this.resolveColumnWidths(columns, containerWidth);
-
-    // 1. Measure Header
-    const headerHeight = await measureRow(null, columns, resolvedWidths, this.fonts, true);
+    const { data, columns, options, headerStyle, rowStyle } = tableNode.props;
+    const resolvedWidths = this.resolveColumnWidths(columns, contentWidth);
 
     const segments: TableSegment[] = [];
     let currentRows: any[] = [];
@@ -186,13 +196,18 @@ export class LayoutEngine {
 
     for (let i = 0; i < data.length; i++) {
       const rowData = data[i];
-      const rowHeight = await measureRow(rowData, columns, resolvedWidths, this.fonts, false);
+      const rowHeight = await measureRow(rowData, columns, resolvedWidths, this.fonts, false, rowStyle);
 
       // Check if we need to start a new page
-      // Subtract headerHeight because every NEW page MAY have a header
-      const effectiveHeaderHeight = (isFirstSegment || options?.headerRepeat !== false) ? headerHeight : 0;
-      const neededHeight = rowHeight + effectiveHeaderHeight;
+      const innerHeaderHeight = options?.headerRepeat !== false ? headerHeight : 0;
+      
+      // If this is the start of a new segment, we MUST account for the header
+      const neededHeaderHeight = (currentRows.length === 0) 
+        ? (isFirstSegment ? headerHeight : innerHeaderHeight) 
+        : 0;
+      const neededHeight = rowHeight + neededHeaderHeight;
 
+      // Split only when we have rows to flush and the next row doesn't fit
       if (currentHeight < neededHeight && currentRows.length > 0) {
         // Start a new segment
         segments.push({ 
@@ -201,22 +216,29 @@ export class LayoutEngine {
           resolvedWidths 
         });
         currentRows = [rowData];
-        currentHeight = pageHeight - effectiveHeaderHeight - rowHeight;
+        currentHeight = pageHeight - innerHeaderHeight - rowHeight;
         isFirstSegment = false;
       } else {
         currentRows.push(rowData);
         currentHeight -= rowHeight;
         if (currentRows.length === 1 && (isFirstSegment || options?.headerRepeat !== false)) {
-            currentHeight -= headerHeight; // Account for header on this page
+            currentHeight -= headerHeight;
         }
       }
     }
 
-    // Always push at least one segment even if data is empty (to show header)
-    if (currentRows.length > 0 || segments.length === 0) {
+    // Always push the final remaining rows
+    if (currentRows.length > 0) {
+      segments.push({ 
+        header: isFirstSegment || options?.headerRepeat !== false, 
+        rows: currentRows,
+        resolvedWidths 
+      });
+    } else if (segments.length === 0) {
+      // Empty table — at least show the header
       segments.push({ 
         header: true, 
-        rows: currentRows,
+        rows: [],
         resolvedWidths 
       });
     }
@@ -273,26 +295,24 @@ export class LayoutEngine {
     const { columns, options, headerStyle, rowStyle, style } = tableNode.props;
     const { resolvedWidths } = segment;
     
-    const rows: VNode[] = [];
+    const header = segment.header 
+      ? this.createRowVNode(null, columns, resolvedWidths, true, false, headerStyle, rowStyle)
+      : null;
 
-    // Add Header
-    if (segment.header) {
-      rows.push(this.createRowVNode(null, columns, resolvedWidths, true, false, headerStyle, rowStyle));
-    }
-
-    // Add Data Rows
-    segment.rows.forEach((rowData: any, idx: number) => {
-      rows.push(this.createRowVNode(rowData, columns, resolvedWidths, false, (idx % 2 === 1) && !!options?.stripe, headerStyle, rowStyle));
-    });
+    const rows = segment.rows.map((rowData: any, idx: number) => 
+      this.createRowVNode(rowData, columns, resolvedWidths, false, (idx % 2 === 1) && !!options?.stripe, headerStyle, rowStyle)
+    );
 
     return h('div', {
       style: {
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
+        flexShrink: 0,
         ...style,
-      }
-    } as any, rows) as any;
+      },
+      _segment: segment,
+    } as any, header ? [header, ...rows] : rows) as any;
   }
 
   private createRowVNode(
@@ -338,13 +358,22 @@ export class LayoutEngine {
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
         borderBottomStyle: 'solid',
+        backgroundColor: stripe ? '#f9fafb' : 'transparent',
+        flexShrink: 0,
         ...globalRowStyle,
       }
     } as any, cells) as any;
   }
 
   private isTableNode(node: VNode): boolean {
-    return (node.type as any)?.displayName === 'NebulaPdfTable' || node.type === 'table-internal';
+    const type = node.type as any;
+    const isTable = (
+      type?.__isNebulaTable === true ||
+      type?.displayName === 'NebulaPdfTable' || 
+      node.type === 'table-internal'
+    );
+    
+    return isTable;
   }
 
   /**
@@ -426,5 +455,25 @@ export class LayoutEngine {
       fits: splitResult.fits,
       overflowPages,
     };
+  }
+
+  /**
+   * Calculates the total height of a table segment by measuring its rows.
+   */
+  private async measureTableSegment(tableNode: TableNode<any>, segment: TableSegment): Promise<number> {
+    const { columns, headerStyle, rowStyle } = tableNode.props;
+    const { rows, header, resolvedWidths } = segment;
+    
+    let totalHeight = 0;
+
+    if (header) {
+      totalHeight += await measureRow(null, columns, resolvedWidths, this.fonts, true, headerStyle);
+    }
+
+    for (const rowData of rows) {
+      totalHeight += await measureRow(rowData, columns, resolvedWidths, this.fonts, false, rowStyle);
+    }
+
+    return totalHeight;
   }
 }

@@ -124,9 +124,11 @@ export class PdfEngine {
                     display: 'flex',
                     flexDirection: 'column',
                     width: dimensions.contentWidth,
-                    height: '100%',
+                    minHeight: '100%',
                   },
-                  children,
+                  children: [
+                    ...children,
+                  ],
                 },
               },
             ],
